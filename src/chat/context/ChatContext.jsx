@@ -33,6 +33,18 @@ const ChatProvider = ({ children }) => {
     baseURL: import.meta.env.VITE_API_URL_NEW || "http://172.16.17.4:8001",
     withCredentials: false,
   });
+  // helper: создание backend-сессии (возвращает session_id)
+  const createBackendSession = async ({ userId = null, sessionName }) => {
+    const payload = {
+      user_id: userId,
+      session_name: sessionName || "New chat",
+    };
+    const { data } = await apiNew.post("/api/sessions", payload, {
+      headers: { "Content-Type": "application/json" },
+      withCredentials: false,
+    });
+    return data?.session_id;
+  };
 
   const createDefaultChat = () => ({
     id: null,
@@ -649,29 +661,11 @@ const ChatProvider = ({ children }) => {
   ) {
     if (!text) return;
 
-    const currentChat = chats.find(
-      (c) =>
-        String(c.id) === String(currentChatId) ||
-        (c.id === null && c === chats[0]),
-    );
-
     const {
       category: apCategory,
       subcategory: apSubcategory,
       subcategory_report: apSubReport,
     } = additionalParams;
-
-    const params = {
-      prompt: text,
-      locale,
-      category: apCategory ?? currentCategory?.name ?? null,
-      subcategory: apSubcategory ?? currentSubcategory?.name ?? null,
-      subcategory_report: apSubReport ?? null,
-    };
-
-    if (currentChat && currentChat.id) {
-      params.conversation_id = currentChat.id;
-    }
 
     setIsTyping(true);
 
@@ -743,14 +737,42 @@ const ChatProvider = ({ children }) => {
       let accumulatedText = "";
 
       // === Новый однократный JSON-эндпойнт на B-бэке ===
-      const currentChatRef = chats.find(
+      let currentChatRef = chats.find(
         (c) =>
           String(c.id) === String(currentChatId) ||
           (c.id === null && c === chats[0]),
       );
+      // Если у текущего чата ещё нет id — создаём сессию заранее
+      if (!currentChatRef?.id) {
+        // Название можно сделать из первых символов запроса
+        const sessionName = (text || "New chat").slice(0, 50);
+        const sid = await createBackendSession({ userId: null, sessionName });
+        if (sid) {
+          setCurrentChatId(sid);
+          setChats((prev) => {
+            // обновим первый/текущий пустой чат id'шником
+            const idx = prev.findIndex(
+              (c) =>
+                String(c.id) === String(currentChatId) ||
+                (c.id === null && c === prev[0]),
+            );
+            if (idx === -1) return prev;
+            const updated = {
+              ...prev[idx],
+              id: sid,
+              title: sessionName,
+              isEmpty: false,
+            };
+            return [...prev.slice(0, idx), updated, ...prev.slice(idx + 1)];
+          });
+          // пересчитаем ссылку
+          currentChatRef = { ...currentChatRef, id: sid };
+        }
+      }
+
       const body = {
         query: text,
-        session_id: currentChatRef?.id || null,
+        session_id: currentChatRef?.id || null, // теперь почти всегда уже есть
         user_id: null,
         language: mapLangForNewApi(locale),
       };
@@ -787,21 +809,23 @@ const ChatProvider = ({ children }) => {
         };
         const messages = [...prev[ci].messages];
         messages[msgIdx] = updatedMsg;
-        const chatUpdated = { ...prev[ci], messages };
+        const chatUpdated = {
+          ...prev[ci],
+          messages,
+          ...(sid
+            ? {
+                id: sid,
+                title: prev[ci].title ?? (text || "New chat").slice(0, 50),
+              }
+            : {}),
+          lastUpdated: new Date().toISOString(),
+        };
         return [...prev.slice(0, ci), chatUpdated, ...prev.slice(ci + 1)];
       });
 
       // Зафиксировать/обновить session_id как текущий id чата
       if (sid) {
         setCurrentChatId(sid);
-        setChats((prev) => {
-          const ci = prev.findIndex((c) =>
-            c.messages.some((m) => m.streaming === false),
-          );
-          if (ci === -1) return prev;
-          const chatUpdated = { ...prev[ci], id: sid };
-          return [...prev.slice(0, ci), chatUpdated, ...prev.slice(ci + 1)];
-        });
       }
     } catch (error) {
       console.error("Ошибка запроса:", error);
