@@ -9,7 +9,7 @@ import {
   isChatDeleted,
   markChatAsDeleted,
   saveBadFeedbackPromptState,
-  saveFeedbackState
+  saveFeedbackState,
 } from "../utils/feedbackStorage";
 import mockCategories from "./mockCategories.json";
 
@@ -26,7 +26,12 @@ const ChatProvider = ({ children }) => {
   const [isInBinFlow, setIsInBinFlow] = useState(false);
   const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
-    withCredentials: true, // <-- добавлено
+    withCredentials: true,
+  });
+  // Новый клиент для B-бэка
+  const apiNew = axios.create({
+    baseURL: import.meta.env.VITE_API_URL_NEW || "http://172.16.17.4:8001",
+    withCredentials: false,
   });
 
   const createDefaultChat = () => ({
@@ -123,6 +128,8 @@ const ChatProvider = ({ children }) => {
     i18n.changeLanguage(lang);
     localStorage.setItem("locale", lang);
   };
+
+  const mapLangForNewApi = (loc) => (loc === "kz" ? "kk" : "ru");
 
   const fetchChatHistory = async (chatId) => {
     try {
@@ -232,7 +239,7 @@ const ChatProvider = ({ children }) => {
     const loadAndCleanChats = async () => {
       try {
         const myChats = await fetchMyChats();
-        
+
         // Ensure myChats is an array - handle different response structures
         let chatsArray = [];
         if (Array.isArray(myChats)) {
@@ -242,11 +249,16 @@ const ChatProvider = ({ children }) => {
         } else if (myChats && Array.isArray(myChats.data)) {
           chatsArray = myChats.data;
         } else {
-          console.warn("Unexpected response format from fetchMyChats:", myChats);
+          console.warn(
+            "Unexpected response format from fetchMyChats:",
+            myChats,
+          );
           chatsArray = [];
         }
-        
-        const filteredChats = chatsArray.filter((chat) => !isChatDeleted(chat.id));
+
+        const filteredChats = chatsArray.filter(
+          (chat) => !isChatDeleted(chat.id),
+        );
 
         setChats((prevChats) => {
           const defaultChat = prevChats.find((c) => c.id === null);
@@ -300,12 +312,14 @@ const ChatProvider = ({ children }) => {
 
       setCategories(fetchedCategories);
       setTranslationsKz(fetchedTranslations);
-      
+
       // Only call updateChatWithCategories if we have categories
       if (fetchedCategories && fetchedCategories.length > 0) {
         updateChatWithCategories(fetchedCategories);
       } else {
-        console.warn("No categories fetched, skipping updateChatWithCategories");
+        console.warn(
+          "No categories fetched, skipping updateChatWithCategories",
+        );
       }
     } catch (error) {
       console.error("Ошибка при загрузке начальных сообщений:", error);
@@ -404,10 +418,13 @@ const ChatProvider = ({ children }) => {
   const updateChatWithCategories = (fetchedCategories) => {
     // Safety check: ensure fetchedCategories is an array
     if (!fetchedCategories || !Array.isArray(fetchedCategories)) {
-      console.warn("updateChatWithCategories: fetchedCategories is not a valid array:", fetchedCategories);
+      console.warn(
+        "updateChatWithCategories: fetchedCategories is not a valid array:",
+        fetchedCategories,
+      );
       return;
     }
-    
+
     setChats((prev) =>
       prev.map((chat) => {
         if (
@@ -704,8 +721,6 @@ const ChatProvider = ({ children }) => {
     );
 
     try {
-      const USE_MOCK_ANSWER = false; // <-- включи true при необходимости
-
       const updateLastMessage = (newText, streamingFlag = true) => {
         const formattedText = newText.replace(/\\n/g, "\n");
 
@@ -727,200 +742,69 @@ const ChatProvider = ({ children }) => {
 
       let accumulatedText = "";
 
-      if (USE_MOCK_ANSWER) {
-        const mockChunks = [
-          '2:{"type": "conversation", "conversation": {"id": "685d1ed3bf75ada21284c864", "title": "Отправь ссылку на гл...", "created_at": "2025-06-26T10:20:03.076927Z"}}\n',
-          '0:"Вот"\n',
-          '0:" ссылка"\n',
-          '0:" на"\n',
-          '0:" ["\n',
-          '0:"глав"\n',
-          '0:"ную"\n',
-          '0:" страницу"\n',
-          '0:"]("\n',
-          '0:"https"\n',
-          '0:"://"\n',
-          '0:"s"\n',
-          '0:"ana"\n',
-          '0:"q"\n',
-          '0:".gov"\n',
-          '0:".kz"\n',
-          '0:"/s"\n',
-          '0:"ana"\n',
-          '0:"qui"\n',
-          '0:"/#"\n',
-          '0:"/"\n',
-          '0:"home"\n',
-          '0:")"\n',
-          '0:" сайта"\n',
-          '0:"."\n',
-          '0:"\\n"\n',
-          '0:"\\"status\\": \\"ok\\""\n', // ⬅️ Добавлено как обычный текст в стриме
-          '2:{"type": "status", "status": "ok"}\n',
-          '2:{"type": "final_text", "final_text": "Вот ссылка на главную страницу: [главная](https://sanaq.gov.kz/sanaqui/#/home) сайта."}\n',
-          'd:{"finishReason": "stop"}\n',
-        ];
+      // === Новый однократный JSON-эндпойнт на B-бэке ===
+      const currentChatRef = chats.find(
+        (c) =>
+          String(c.id) === String(currentChatId) ||
+          (c.id === null && c === chats[0]),
+      );
+      const body = {
+        query: text,
+        session_id: currentChatRef?.id || null,
+        user_id: null,
+        language: mapLangForNewApi(locale),
+      };
 
-        for (const line of mockChunks) {
-          const trimmed = line.trim();
-          if (!trimmed) continue;
+      const { data } = await apiNew.post("/api/chat", body, {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: false,
+      });
+      const {
+        response: answer,
+        session_id: sid,
+        sql_query,
+        raw_data,
+        error: isError,
+      } = data || {};
 
-          if (trimmed.startsWith("0:")) {
-            const textFragment = trimmed.slice(2).replace(/^"|"$/g, "");
-            accumulatedText += textFragment;
-            updateLastMessage(accumulatedText, true);
-            await new Promise((res) => setTimeout(res, 50));
-          } else if (trimmed.startsWith("2:")) {
-            try {
-              const jsonObj = JSON.parse(trimmed.slice(2));
-              if (jsonObj.type === "conversation") {
-                const { id: convId, title: convTitle } = jsonObj.conversation;
-                setCurrentChatId(convId);
-                setChats((prevChats) => {
-                  const idx = prevChats.findIndex((chat) =>
-                    chat.messages.some((msg) => msg.streaming),
-                  );
-                  if (idx === -1) return prevChats;
-                  const updated = {
-                    ...prevChats[idx],
-                    id: convId,
-                    title: convTitle,
-                  };
-                  return [
-                    ...prevChats.slice(0, idx),
-                    updated,
-                    ...prevChats.slice(idx + 1),
-                  ];
-                });
-              } else if (jsonObj.type === "relevant_documents") {
-                setChats((prevChats) =>
-                  prevChats.map((chat) => {
-                    const idx = chat.messages.findIndex((msg) => msg.streaming);
-                    if (idx === -1) return chat;
-                    const updated = [...chat.messages];
-                    updated[idx] = {
-                      ...updated[idx],
-                      filePaths: jsonObj.documents || [],
-                    };
-                    return { ...chat, messages: updated };
-                  }),
-                );
-              } else if (jsonObj.type === "final_text") {
-                setChats((prevChats) =>
-                  prevChats.map((chat) => {
-                    const idx = chat.messages.findIndex((msg) => msg.streaming);
-                    if (idx === -1) return chat;
+      // Текст ответа (или текст ошибки от бэка)
+      accumulatedText += typeof answer === "string" ? answer : "";
+      updateLastMessage(accumulatedText, false);
 
-                    const updatedMessages = [...chat.messages];
-                    updatedMessages[idx] = {
-                      ...updatedMessages[idx],
-                      text: jsonObj.final_text,
-                      streaming: false,
-                    };
-
-                    return { ...chat, messages: updatedMessages };
-                  }),
-                );
-              }
-            } catch (err) {
-              console.error("[mock JSON parse error]", err);
-            }
-          } else if (trimmed.startsWith("d:")) {
-            updateLastMessage(accumulatedText, false);
-          }
-        }
-
-        setIsTyping(false);
-        return;
-      }
-
-      const searchParams = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-          searchParams.append(key, value);
-        }
+      // Проставить доп. поля (sql/raw) на последнее бот-сообщение
+      setChats((prev) => {
+        const ci = prev.findIndex((c) => c.messages.some((m) => m.streaming));
+        if (ci === -1) return prev;
+        const msgIdx = prev[ci].messages.findIndex((m) => m.streaming);
+        const updatedMsg = {
+          ...prev[ci].messages[msgIdx],
+          text: accumulatedText,
+          streaming: false,
+          // новые поля из B-бэка
+          sqlQuery: sql_query || "",
+          rawData: Array.isArray(raw_data) ? raw_data : [],
+          isError: !!isError,
+        };
+        const messages = [...prev[ci].messages];
+        messages[msgIdx] = updatedMsg;
+        const chatUpdated = { ...prev[ci], messages };
+        return [...prev.slice(0, ci), chatUpdated, ...prev.slice(ci + 1)];
       });
 
-      const url = `${
-        import.meta.env.VITE_API_URL
-      }/assistant/ask?${searchParams.toString()}`;
-      const response = await fetch(url, {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let done = false;
-
-      while (!done) {
-        const { value, done: doneReading } = await reader.read();
-        done = doneReading;
-        const chunk = decoder.decode(value, { stream: !done });
-        const lines = chunk.split("\n");
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed) continue;
-
-          if (trimmed.startsWith("0:")) {
-            const textFragment = trimmed.slice(2).replace(/^"|"$/g, "");
-            accumulatedText += textFragment;
-            updateLastMessage(accumulatedText, true);
-            await new Promise((resolve) => setTimeout(resolve, 50));
-          } else if (trimmed.startsWith("2:")) {
-            try {
-              const jsonObj = JSON.parse(trimmed.slice(2));
-              if (jsonObj.type === "conversation") {
-                const { id: convId, title: convTitle } = jsonObj.conversation;
-                setCurrentChatId(convId);
-                setChats((prevChats) => {
-                  const idx = prevChats.findIndex((chat) =>
-                    chat.messages.some((msg) => msg.streaming),
-                  );
-                  if (idx === -1) return prevChats;
-                  const updated = {
-                    ...prevChats[idx],
-                    id: convId,
-                    title: convTitle,
-                  };
-                  return [
-                    ...prevChats.slice(0, idx),
-                    updated,
-                    ...prevChats.slice(idx + 1),
-                  ];
-                });
-              } else if (jsonObj.type === "relevant_documents") {
-                setChats((prevChats) =>
-                  prevChats.map((chat) => {
-                    const idx = chat.messages.findIndex((msg) => msg.streaming);
-                    if (idx === -1) return chat;
-                    const updated = [...chat.messages];
-                    updated[idx] = {
-                      ...updated[idx],
-                      filePaths: jsonObj.documents || [],
-                    };
-                    return { ...chat, messages: updated };
-                  }),
-                );
-              } else if (jsonObj.type === "final_text") {
-                updateLastMessage(jsonObj.final_text, true);
-              } else if (jsonObj.type === "status") {
-                console.log("Status chunk:", jsonObj.status);
-              }
-            } catch (error) {
-              console.error("Ошибка парсинга JSON 2-чанка:", error);
-            }
-          } else if (trimmed.startsWith("d:")) {
-            updateLastMessage(accumulatedText, false);
-          }
-        }
+      // Зафиксировать/обновить session_id как текущий id чата
+      if (sid) {
+        setCurrentChatId(sid);
+        setChats((prev) => {
+          const ci = prev.findIndex((c) =>
+            c.messages.some((m) => m.streaming === false),
+          );
+          if (ci === -1) return prev;
+          const chatUpdated = { ...prev[ci], id: sid };
+          return [...prev.slice(0, ci), chatUpdated, ...prev.slice(ci + 1)];
+        });
       }
     } catch (error) {
-      console.error("Ошибка стриминга:", error);
+      console.error("Ошибка запроса:", error);
       const errorMessage = {
         text: t("chatError.errorMessage"),
         isUser: false,
@@ -961,9 +845,10 @@ const ChatProvider = ({ children }) => {
 
           // Собираем кнопки FAQ по этой категории
           const faqButtons = (categoryData.faq || []).map((f, i) => ({
-            text: i18n.language === "қаз" 
-              ? translationsKz[f.question] || f.question
-              : f.question,
+            text:
+              i18n.language === "қаз"
+                ? translationsKz[f.question] || f.question
+                : f.question,
             isUser: true,
             isFeedback: false,
             isButton: true,
@@ -1062,9 +947,10 @@ const ChatProvider = ({ children }) => {
           if (!isCurrent) return chat;
 
           const faqButtons = categoryData.faq.map((f, i) => ({
-            text: i18n.language === "қаз" 
-              ? translationsKz[f.question] || f.question
-              : f.question,
+            text:
+              i18n.language === "қаз"
+                ? translationsKz[f.question] || f.question
+                : f.question,
             isUser: true,
             isFeedback: false,
             isButton: true,
@@ -1245,80 +1131,6 @@ const ChatProvider = ({ children }) => {
     );
   };
 
-  //const updateChatLastUpdated = (chatId, newDate) => {
-  //   setChats((prevChats) =>
-  //      prevChats.map((chat) => (String(chat.id) === String(chatId) ? { ...chat, lastUpdated: newDate } : chat))
-  //   );
-  //};
-
-  //if (typeof window !== "undefined") {
-  //   window.updateChatLastUpdated = updateChatLastUpdated;
-  //}
-
-  //window.updateChatLastUpdated("68021ab9ed98616d690aeca4", "2025-04-01T00:00:00.000Z"); - как меняем дату через консоль
-
-  //и ещё для проверки удаления неактивных чатов нужно autoDeleteInactiveChats передать в sidebar и раскоментировать вызов внутри handleNewChat
-
-  // В вашем ChatContext.js
-  // Обновлённая версия fetchFormsByBin, теперь принимает год из модалки
-
-  const fetchFormsByBin = async (bin, year = new Date().getFullYear()) => {
-    const lang = i18n.language === "қаз" ? "kk" : "ru";
-
-    try {
-      // 1) Немедленно получаем перечень форм
-      const res = await api.get("/begunok/form", {
-        params: { bin, year, lang },
-      });
-      const forms = res.data;
-
-      // 2) Параллельно в фоне запускаем предзаказ (order_report)
-      (async () => {
-        try {
-          // Делаем предзаказ только для первой формы
-          if (forms.length > 0) {
-            const first = forms[0];
-            const orderRes = await api.post("/begunok/order_report", null, {
-              params: { bin, year, lang, formVersionId: first.formVersionId },
-            });
-            const enriched = [
-              {
-                ...first,
-                order_id: orderRes.data.order_id,
-                filename: orderRes.data.filename,
-              },
-              ...forms.slice(1),
-            ];
-
-            // Обновляем только attachments в сообщениях
-            setChats((prevChats) =>
-              prevChats.map((chat) => {
-                const msgs = chat.messages.map((msg) =>
-                  msg.attachments ? { ...msg, attachments: enriched } : msg,
-                );
-                return { ...chat, messages: msgs };
-              }),
-            );
-          }
-        } catch (err) {
-          console.error("[pre-order_report error]", err);
-        }
-      })();
-
-      // 4) Возвращаем исходный список сразу — UI отрисует его без задержки
-      return forms;
-    } catch (err) {
-      console.error("Error fetching forms by BIN:", err);
-      throw err;
-    }
-  };
-
-  //const fetchFormsByBin = async (bin, year = new Date().getFullYear()) => {
-  //   console.log("⚙️ [MOCK] fetchFormsByBin called with BIN:", bin, "year:", year);
-
-  //   return mockForms;
-  //};
-
   // 2) Добавление в чат «кнопочных» сообщений
   const addButtonMessages = (buttons) => {
     setChats((prev) =>
@@ -1329,16 +1141,6 @@ const ChatProvider = ({ children }) => {
         return chat;
       }),
     );
-  };
-
-  const downloadForm = (bin, formVersionId, orderId, filename) => {
-    const lang = i18n.language === "қаз" ? "kk" : "ru";
-    const baseUrl = import.meta.env.VITE_API_URL;
-    // Формируем прямой URL к отчету
-    const url = `${baseUrl}/begunok/report?order_id=${orderId}&lang=${lang}`;
-    // Открываем в новой вкладке — браузер сам отрендерит inline PDF
-    // base target="_parent" will handle iframe behavior automatically
-    window.open(url, "_blank");
   };
 
   return (
@@ -1364,9 +1166,7 @@ const ChatProvider = ({ children }) => {
               (c.id === null && c === chats[0]),
           )?.showInitialButtons || false,
         updateLocale,
-        fetchFormsByBin,
         addButtonMessages,
-        downloadForm,
         deleteChat,
         addBotMessage,
         setChats,

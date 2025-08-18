@@ -157,17 +157,6 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
 
             <MessageInput />
 
-            {showSpecialButton && (
-              <div className="special-button-container">
-                <button
-                  className="btn special"
-                  onClick={() => setBinModalOpen(true)}
-                >
-                  {t("binModal.specialFormsButton")}
-                </button>
-              </div>
-            )}
-
             <MessageList
               isSidebarOpen={isSidebarOpen}
               toggleSidebar={toggleSidebar}
@@ -220,17 +209,6 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
             </div>
 
             <MessageInput />
-
-            {showSpecialButton && (
-              <div className="special-button-container">
-                <button
-                  className="btn special"
-                  onClick={() => setBinModalOpen(true)}
-                >
-                  {t("binModal.specialFormsButton")}
-                </button>
-              </div>
-            )}
 
             <MessageList
               isSidebarOpen={isSidebarOpen}
