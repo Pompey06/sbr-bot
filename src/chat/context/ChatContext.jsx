@@ -143,62 +143,50 @@ const ChatProvider = ({ children }) => {
 
   const mapLangForNewApi = (loc) => (loc === "kz" ? "kk" : "ru");
 
-  const fetchChatHistory = async (chatId) => {
+  const fetchChatHistory = async (sessionId, limit = 50) => {
     try {
-      const response = await api.get(`/conversation/by-id/${chatId}`);
-
-      const formattedMessages = response.data.messages.map((message) => ({
-        text: message.text,
-        isUser: message.type === "user",
-        isFeedback: false,
-        isButton: false,
-      }));
-
-      let messagesWithFeedback = [];
-
-      const savedFilePaths = getFilePaths(chatId);
-      console.log("Saved file paths for chat", chatId, ":", savedFilePaths);
-
-      let botIndex = 0;
-      formattedMessages.forEach((message, index) => {
-        if (!message.isUser) {
-          // Получаем filePaths по индексу бота
-          const paths = getFilePathByBotIndex(chatId, botIndex);
-          console.log(`Bot message ${botIndex}, paths:`, paths);
-
-          if (paths && paths.length > 0) {
-            message.filePaths = paths;
-          }
-
-          // Также проверяем сохраненные пути по индексу сообщения
-          if (savedFilePaths[index] && savedFilePaths[index].length > 0) {
-            const existingPaths = message.filePaths || [];
-            const newPaths = Array.isArray(savedFilePaths[index])
-              ? savedFilePaths[index]
-              : [savedFilePaths[index]];
-
-            message.filePaths = [...new Set([...existingPaths, ...newPaths])];
-          }
-
-          botIndex++;
-        }
-
-        messagesWithFeedback.push(message);
+      // NEW B-backend: GET /api/sessions/{session_id}/history?limit=50
+      const { data } = await apiNew.get(`/api/sessions/${sessionId}/history`, {
+        params: { limit },
       });
 
-      if (hasBadFeedbackPrompt(chatId)) {
-        messagesWithFeedback.push({
-          text: t("feedback.badFeedbackPromptText"),
-          isUser: false,
-          isFeedback: false,
-          badFeedbackPrompt: true,
-        });
-      }
+      // ожидаем data.messages: [{ id, role: 'assistant'|'user', content, timestamp, user_id }]
+      const baseMessages = (data?.messages || []).map((m) => ({
+        text: m?.content ?? "",
+        isUser: m?.role === "user",
+        isFeedback: false,
+        isButton: false,
+        timestamp: m?.timestamp,
+      }));
 
-      // Здесь добавляем флаг isAssistantResponse для подходящих сообщений
-      messagesWithFeedback = messagesWithFeedback.map((message) => {
-        // Если сообщение не от пользователя, не является фидбеком,
-        // не имеет кастомных флагов (например, для регистрации)
+      // восстановление filePaths для бот-ответов
+      const savedFilePaths = getFilePaths(sessionId);
+      let botIndex = 0;
+      const withFiles = baseMessages.map((msg, idx) => {
+        if (!msg.isUser) {
+          const pathsByBot = getFilePathByBotIndex(sessionId, botIndex) || [];
+          const savedByIdx = Array.isArray(savedFilePaths[idx])
+            ? savedFilePaths[idx]
+            : savedFilePaths[idx]
+            ? [savedFilePaths[idx]]
+            : [];
+          botIndex += 1;
+          return {
+            ...msg,
+            filePaths: [
+              ...new Set([
+                ...(msg.filePaths || []),
+                ...pathsByBot,
+                ...savedByIdx,
+              ]),
+            ],
+          };
+        }
+        return msg;
+      });
+
+      // добавляем флаг isAssistantResponse туда, где это просто обычный ответ ассистента
+      const normalized = withFiles.map((message) => {
         if (
           !message.isUser &&
           !message.isFeedback &&
@@ -210,9 +198,21 @@ const ChatProvider = ({ children }) => {
         return message;
       });
 
+      // вставим «приглашение к регистрации проблемы», если оно сохранено ранее
+      if (hasBadFeedbackPrompt(sessionId)) {
+        normalized.push({
+          text: t("feedback.badFeedbackPromptText"),
+          isUser: false,
+          isFeedback: false,
+          badFeedbackPrompt: true,
+          isAssistantResponse: false,
+        });
+      }
+
       return {
-        ...response.data,
-        messages: messagesWithFeedback,
+        session_id: sessionId,
+        messages: normalized,
+        message_count: data?.message_count ?? normalized.length,
       };
     } catch (error) {
       console.error("Error fetching chat history:", error);
@@ -637,7 +637,7 @@ const ChatProvider = ({ children }) => {
                   chat.messages[0],
                   ...chatHistory.messages,
                 ],
-                title: chatHistory.title,
+                title: chatHistory?.title ?? chat.title,
                 isEmpty: false,
                 showInitialButtons: false,
                 buttonsWereHidden: true,
