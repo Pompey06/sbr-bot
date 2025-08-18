@@ -1,4 +1,4 @@
-# StatGov — фронтенд-приложение чата
+# SBR Bot — фронтенд-приложение чата
 
 ## Установка зависимостей
 
@@ -23,6 +23,7 @@ npm run dev
 
 ```env
 VITE_API_URL=http://your-api-url/api
+VITE_API_URL_NEW=http://your-new-api-url
 VITE_SHOW_SPECIAL_BUTTON=true
 VITE_SHOW_AVATAR=false
 VITE_USE_ALT_GREETING=true
@@ -30,7 +31,8 @@ VITE_USE_ALT_GREETING=true
 
 **Описание переменных:**
 
--  `VITE_API_URL` — строка (string), базовый адрес API, к которому отправляются запросы (например, `http://example.com/api`);
+-  `VITE_API_URL` — строка, базовый адрес старого API;
+-  `VITE_API_URL_NEW` — строка, базовый адрес нового API;
 -  `VITE_SHOW_SPECIAL_BUTTON` — boolean переменная (`true` или `false`), включает или отключает отображение специальной "бин"-кнопки на стартовом экране;
 -  `VITE_SHOW_AVATAR` — boolean переменная (`true` или `false`), отвечает за отображение аватара как на стартовом экране, так и в сообщениях чата.
 
@@ -72,7 +74,7 @@ server {
 ### Важно
 
 -  Убедитесь, что `VITE_API_URL` в `.env` указывает на **рабочий backend**, доступный с сервера.
--  Если используется прокси (например, backend работает на другом порту), настройте проксирование через `location /api`.
+-  Если backend находится на другом домене/порту, настройте CORS или прокси.
 
 ---
 
