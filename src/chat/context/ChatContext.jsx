@@ -263,8 +263,9 @@ const ChatProvider = ({ children }) => {
 
   const fetchMyChats = async () => {
     try {
-      const response = await api.get(`/conversation/my`);
-      return response.data;
+      const { data } = await apiNew.get(`/api/sessions/${userId}`);
+      // ожидаем { sessions: [{ id, name, created_at, updated_at, message_count }], total_count }
+      return Array.isArray(data?.sessions) ? data.sessions : [];
     } catch (error) {
       console.error("Error fetching my chats:", error);
       throw error;
@@ -274,45 +275,26 @@ const ChatProvider = ({ children }) => {
   useEffect(() => {
     const loadAndCleanChats = async () => {
       try {
-        const myChats = await fetchMyChats();
-
-        // Ensure myChats is an array - handle different response structures
-        let chatsArray = [];
-        if (Array.isArray(myChats)) {
-          chatsArray = myChats;
-        } else if (myChats && Array.isArray(myChats.chats)) {
-          chatsArray = myChats.chats;
-        } else if (myChats && Array.isArray(myChats.data)) {
-          chatsArray = myChats.data;
-        } else {
-          console.warn(
-            "Unexpected response format from fetchMyChats:",
-            myChats,
-          );
-          chatsArray = [];
-        }
-
-        const filteredChats = chatsArray.filter(
-          (chat) => !isChatDeleted(chat.id),
-        );
+        const sessions = await fetchMyChats();
+        const filtered = sessions.filter((s) => !isChatDeleted(s.id));
 
         setChats((prevChats) => {
-          const defaultChat = prevChats.find((c) => c.id === null);
-          return [
-            defaultChat,
-            ...filteredChats.map((chat) => ({
-              ...createDefaultChat(),
-              id: chat.id,
-              title: chat.title,
-              isEmpty: false,
-            })),
-          ];
+          const defaultChat =
+            prevChats.find((c) => c.id === null) || createDefaultChat();
+          const mapped = filtered.map((s) => ({
+            ...createDefaultChat(),
+            id: s.id,
+            title: s.name || t("sidebar.newChat"),
+            lastUpdated:
+              s.updated_at || s.created_at || new Date().toISOString(),
+            isEmpty: false,
+          }));
+          return [defaultChat, ...mapped];
         });
-        // После загрузки чатов запускаем автоматическое удаление неактивных
+
         autoDeleteInactiveChats();
       } catch (error) {
         console.error("Error loading existing chats:", error);
-        // Ensure we still have a default chat even if loading fails
         setChats((prevChats) => {
           const defaultChat = prevChats.find((c) => c.id === null);
           return defaultChat ? [defaultChat] : [createDefaultChat()];
@@ -321,7 +303,7 @@ const ChatProvider = ({ children }) => {
     };
 
     loadAndCleanChats();
-  }, []);
+  }, []); // запуск один раз при монтировании
 
   const fetchInitialMessages = async () => {
     const USE_MOCK_CATEGORIES = false;
