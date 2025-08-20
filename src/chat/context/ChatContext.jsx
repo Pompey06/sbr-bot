@@ -34,7 +34,31 @@ const ChatProvider = ({ children }) => {
     withCredentials: false,
   });
   // helper: создание backend-сессии (возвращает session_id)
-  const createBackendSession = async ({ userId = null, sessionName }) => {
+  const getOrCreateUserId = () => {
+    try {
+      const KEY = "sbr_user_id";
+      const stored = localStorage.getItem(KEY);
+      if (stored) return stored;
+      const id =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : "uid-" +
+            Math.random().toString(36).slice(2) +
+            Date.now().toString(36);
+      localStorage.setItem(KEY, id);
+      return id;
+    } catch {
+      // если localStorage недоступен
+      return typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : "uid-" +
+            Math.random().toString(36).slice(2) +
+            Date.now().toString(36);
+    }
+  };
+  const [userId] = useState(getOrCreateUserId);
+
+  const createBackendSession = async ({ sessionName }) => {
     const payload = {
       user_id: userId,
       session_name: sessionName || "New chat",
@@ -746,7 +770,7 @@ const ChatProvider = ({ children }) => {
       if (!currentChatRef?.id) {
         // Название можно сделать из первых символов запроса
         const sessionName = (text || "New chat").slice(0, 50);
-        const sid = await createBackendSession({ userId: null, sessionName });
+        const sid = await createBackendSession({ sessionName });
         if (sid) {
           setCurrentChatId(sid);
           setChats((prev) => {
@@ -773,7 +797,7 @@ const ChatProvider = ({ children }) => {
       const body = {
         query: text,
         session_id: currentChatRef?.id || null, // теперь почти всегда уже есть
-        user_id: null,
+        user_id: userId,
         language: mapLangForNewApi(locale),
       };
 
