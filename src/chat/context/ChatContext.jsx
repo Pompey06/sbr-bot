@@ -321,12 +321,13 @@ const ChatProvider = ({ children }) => {
         // берём данные из локального mockCategories.json
         fetchedCategories = mockCategories.categories || [];
         fetchedTranslations = mockCategories.translations_kz || {};
-      } else {
-        // реальный вызов на бэкенд
-        const res = await api.get("/assistant/categories");
-        fetchedCategories = res.data?.categories || [];
-        fetchedTranslations = res.data?.translations_kz || {};
       }
+      // } else {
+      //   // реальный вызов на бэкенд
+      //   const res = await api.get("/assistant/categories");
+      //   fetchedCategories = res.data?.categories || [];
+      //   fetchedTranslations = res.data?.translations_kz || {};
+      // }
 
       setCategories(fetchedCategories);
       setTranslationsKz(fetchedTranslations);
