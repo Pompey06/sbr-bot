@@ -406,31 +406,39 @@ const ChatProvider = ({ children }) => {
   //   }
   //};
 
-  function deleteChat(chatId) {
-    // Помечаем чат как удалённый в localStorage
+  async function deleteChat(chatId) {
+    // 1) Локально помечаем как удалённый (как и раньше)
     markChatAsDeleted(chatId);
 
+    // 2) Оптимистичное удаление из списка + переключение активного
+    const prev = chats;
     setChats((prevChats) => {
-      // Фильтруем чаты, удаляя чат с данным chatId
       const newChats = prevChats.filter(
         (chat) => String(chat.id) !== String(chatId),
       );
-
-      // Если удалённый чат был активным
       if (String(currentChatId) === String(chatId)) {
         if (newChats.length > 0) {
-          // Переключаемся на самый новый чат (последний элемент массива)
           setCurrentChatId(newChats[newChats.length - 1].id);
         } else {
-          // Если удалён последний чат, создаем новый пустой чат
           const newChat = createDefaultChat();
           newChats.push(newChat);
           setCurrentChatId(newChat.id);
         }
       }
-
       return newChats;
     });
+
+    // 3) Бэкенд: DELETE /api/sessions/{session_id}
+    try {
+      await apiNew.delete(`/api/sessions/${chatId}`, {
+        headers: { Accept: "application/json" },
+        withCredentials: false,
+      });
+    } catch (e) {
+      console.error("Backend delete failed, rolling back:", e);
+      // если упало — откатываем локально
+      setChats(prev);
+    }
   }
 
   const updateChatWithCategories = (fetchedCategories) => {
