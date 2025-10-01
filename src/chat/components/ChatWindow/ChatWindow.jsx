@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 import MessageList from "./MessageList/MessageList";
 import MessageInput from "./MessageInput/MessageInput";
 import BinModal from "../ChatWindow/Modal/BinModal";
-import FaqModal from "../ChatWindow/Modal/FaqModal"; // ✅ новая модалка FAQ
+import FaqModal from "../ChatWindow/Modal/FaqModal";
 import { ChatContext } from "../../context/ChatContext";
 import Header from "../Header/Header";
 import "./ChatWindow.css";
@@ -117,19 +117,17 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
         {isSmall ? (
           <div className="responsive-wrapper">
             <div
-              className={
-                `person__wrapper` +
-                (useAltGreeting ? ` person__wrapper--alt` : ``)
-              }
+              className={`person__wrapper${
+                useAltGreeting ? " person__wrapper--alt" : ""
+              }`}
             >
               {showAvatar && (
                 <img src={personImage} alt="" className="person" />
               )}
               <div
-                className={
-                  `chat-window-start__content` +
-                  (useAltGreeting ? ` chat-window-start__content--alt` : ``)
-                }
+                className={`chat-window-start__content${
+                  useAltGreeting ? " chat-window-start__content--alt" : ""
+                }`}
               >
                 {t(useAltGreeting ? "chat.greetingAlt" : "chat.greeting")}
               </div>
@@ -140,13 +138,12 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
               setInputValue={setInputPrefill}
             />
 
-            {/* ✅ Кнопка FAQ */}
             <button
               type="button"
               className="faq__button border border-blue-500 text-blue-500 rounded-full px-4 py-2 hover:bg-blue-50 transition-colors mt-3"
               onClick={() => setFaqModalOpen(true)}
             >
-              Часто задаваемые вопросы
+              {t("faq.button")}
             </button>
 
             <MessageList
@@ -161,7 +158,6 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
               createMessage={createMessage}
             />
 
-            {/* ✅ Модалка FAQ */}
             <FaqModal
               isOpen={isFaqModalOpen}
               onClose={() => setFaqModalOpen(false)}
@@ -191,6 +187,16 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
               >
                 рус
               </button>
+              <button
+                className={`language__button rounded ${
+                  currentLang === "eng"
+                    ? "bg-blue text-white"
+                    : "bg-gray color-blue"
+                }`}
+                onClick={() => handleLanguageChange("eng")}
+              >
+                eng
+              </button>
             </div>
 
             <div className="person__wrapper">
@@ -198,10 +204,9 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
                 <img src={personImage} alt="" className="person" />
               )}
               <div
-                className={
-                  `chat-window-start__content` +
-                  (useAltGreeting ? ` chat-window-start__content--alt` : ``)
-                }
+                className={`chat-window-start__content${
+                  useAltGreeting ? " chat-window-start__content--alt" : ""
+                }`}
               >
                 {t(useAltGreeting ? "chat.greetingAlt" : "chat.greeting")}
               </div>
@@ -232,7 +237,6 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
               createMessage={createMessage}
             />
 
-            {/* ✅ Модалка FAQ */}
             <FaqModal
               isOpen={isFaqModalOpen}
               onClose={() => setFaqModalOpen(false)}

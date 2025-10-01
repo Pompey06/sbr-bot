@@ -1,0 +1,118 @@
+{
+  "messages": {
+    "feedbackPrompt": "Rate the quality of the answer",
+    "noMessagesInChat": "No messages in this chat"
+  },
+  "logo": {
+    "text": "Bureau of National Statistics of the Agency for Strategic Planning and Reforms of the Republic of Kazakhstan"
+  },
+  "chat": {
+    "suggestionText": "Maybe you were looking for...",
+    "greeting": "Hello! How can I help you?",
+    "greetingAlt": "Hello! How can I assist you?",
+    "sources": "Additionally, I attach instructions for the form:",
+    "interestingSuggestion": "You may also be interested in..."
+  },
+  "sidebar": {
+    "close": "Close sidebar",
+    "newChat": "New chat",
+    "previousRequest": "Previous request",
+    "previousChat": "Previous chat {{number}}",
+    "warning": "Attention: requests older than 7 days are automatically deleted",
+    "today": "Today",
+    "yesterday": "Yesterday"
+  },
+  "feedback": {
+    "good": "Good",
+    "bad": "Bad",
+    "goodAlt": "Positive feedback",
+    "badAlt": "Negative feedback",
+    "goodAltHover": "Positive feedback (hover)",
+    "badAltHover": "Negative feedback (hover)",
+    "goodModalTitle": "Thank you for your feedback!",
+    "goodModalDescription": "We are glad you liked it. Would you like to share what you liked in the answer?",
+    "badModalTitle": "We are sorry you are not satisfied.",
+    "badModalDescription": "We want to improve! Tell us what can be done better.",
+    "requestFeedback": "Rate the quality of the answer",
+    "badFeedbackPromptText": "Sorry we could not answer your question. Please leave your contact details so our operators can reach out to you for assistance.",
+    "openRegistrationForm": "Fill out the form"
+  },
+  "modal": {
+    "close": "Close",
+    "placeholder": "Leave your feedback ...",
+    "submit": "Submit",
+    "feedbackSubmitted": "Feedback sent"
+  },
+  "messageInput": {
+    "placeholder": "Send a message...",
+    "sendIconAlt": "Send icon",
+    "sentMessage": "Message sent",
+    "text": "Our bot uses AI and is in testing stage. There may be inaccuracies in answers. If you encounter them, please let us know by filling out the feedback form.",
+    "textAlt": "Information provided by a virtual AI assistant based on the Statistical Business Register. If necessary, we recommend contacting the call center at 1446."
+  },
+  "chatError": {
+    "errorMessage": "Sorry, an error occurred. Please rephrase your request."
+  },
+  "chatTyping": {
+    "typingMessage": "Typing"
+  },
+  "registration": {
+    "physical": "Individual",
+    "legal": "Legal entity",
+    "surname": "Surname",
+    "successMessage": "Thank you, your request {{requestId}} has been accepted. Our specialists will contact you shortly.",
+    "name": "First name",
+    "patronymic": "Middle name",
+    "phone": "Phone number",
+    "email": "Email",
+    "bin": "BIN",
+    "iin": "IIN",
+    "region": {
+      "select": "Select region",
+      "option1": "1",
+      "option2": "2",
+      "option3": "3"
+    },
+    "description": "Description of your issue, attach screenshots if needed",
+    "chooseFile": "Choose file",
+    "fileInfo": "File must be less than 5 MB.",
+    "removeFile": "Remove",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "consent": "By clicking \"Submit\", I consent to the collection, storage, and processing of my personal data specified in this form in accordance with the legislation of the Republic of Kazakhstan on personal data protection, for the purpose of reviewing my request and receiving feedback from the Bureau of National Statistics."
+  },
+  "copyButton": {
+    "copy": "Copy",
+    "copied": "Copied"
+  },
+  "deleteChatModal": {
+    "title": "Delete chat",
+    "message": "Are you sure you want to delete this chat? This action is irreversible.",
+    "cancel": "Cancel",
+    "confirm": "Delete"
+  },
+  "binModal": {
+    "title": "Enter company BIN",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "specialFormsButton": "List of statistical forms I need to submit",
+    "labelDeadline": "Deadline",
+    "labelRecipient": "Recipient",
+    "labelDescription": "Description",
+    "labelName": "Name",
+    "loadingTitle": "Loading form",
+    "loadingText": "Please wait, the report is being generated...",
+    "foundForms": "List of statistical forms found for BIN {{bin}}:",
+    "invalidBin": "Please enter a valid 12-digit BIN",
+    "fileName": "List of statistical forms",
+    "preparing": "Preparing file",
+    "labelIndex": "Index"
+  },
+  "faq": {
+    "button": "Frequently Asked Questions",
+    "title": "Frequently Asked Questions",
+    "question1": "How to submit a statistical report?",
+    "question2": "What are the deadlines for forms?",
+    "question3": "Where to find filling instructions?"
+  }
+}

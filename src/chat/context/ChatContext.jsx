@@ -56,7 +56,7 @@ const ChatProvider = ({ children }) => {
             Date.now().toString(36);
     }
   };
-  const [userId] = useState(getOrCreateUserId);
+  const [userId] = useState(() => getOrCreateUserId());
 
   const createBackendSession = async ({ sessionName }) => {
     const payload = {
@@ -159,7 +159,11 @@ const ChatProvider = ({ children }) => {
   }, [i18n.language]);
 
   const updateLocale = (lang) => {
-    const newLocale = lang === "қаз" ? "kz" : "ru";
+    let newLocale = "ru";
+    if (lang === "қаз") newLocale = "kz";
+    if (lang === "рус") newLocale = "ru";
+    if (lang === "eng") newLocale = "en";
+
     setLocale(newLocale);
     i18n.changeLanguage(lang);
     localStorage.setItem("locale", lang);
