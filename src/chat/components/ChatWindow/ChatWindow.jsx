@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 import MessageList from "./MessageList/MessageList";
 import MessageInput from "./MessageInput/MessageInput";
 import BinModal from "../ChatWindow/Modal/BinModal";
+import FaqModal from "../ChatWindow/Modal/FaqModal"; // ✅ новая модалка FAQ
 import { ChatContext } from "../../context/ChatContext";
 import Header from "../Header/Header";
 import "./ChatWindow.css";
@@ -20,15 +21,18 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
     fetchFormsByBin,
     setIsTyping,
     setChats,
+    inputPrefill,
+    setInputPrefill,
   } = useContext(ChatContext);
 
   const { t } = useTranslation(undefined, { i18n: chatI18n });
   const [isBinModalOpen, setBinModalOpen] = useState(false);
+  const [isFaqModalOpen, setFaqModalOpen] = useState(false);
+
   const currentChat = chats.find((c) => c.id === currentChatId) || chats[0];
   const isEmptyChat = currentChat.isEmpty;
   const { createMessage } = useContext(ChatContext);
   const currentLang = i18n.language;
-  const showSpecialButton = import.meta.env.VITE_SHOW_SPECIAL_BUTTON === "true";
   const showAvatar = import.meta.env.VITE_SHOW_AVATAR === "true";
   const useAltGreeting = import.meta.env.VITE_USE_ALT_GREETING === "true";
 
@@ -36,7 +40,6 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
     updateLocale(lang);
   };
 
-  // Хук для отслеживания ширины экрана ≤ 700px
   const [isSmall, setIsSmall] = useState(
     () => window.matchMedia("(max-width: 700px)").matches,
   );
@@ -113,29 +116,6 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
 
         {isSmall ? (
           <div className="responsive-wrapper">
-            {/* <div className="flex language">
-              <button
-                className={`language__button rounded ${
-                  currentLang === "қаз"
-                    ? "bg-blue text-white"
-                    : "bg-gray color-blue"
-                }`}
-                onClick={() => handleLanguageChange("қаз")}
-              >
-                қаз
-              </button>
-              <button
-                className={`language__button rounded ${
-                  currentLang === "рус"
-                    ? "bg-blue text-white"
-                    : "bg-gray color-blue"
-                }`}
-                onClick={() => handleLanguageChange("рус")}
-              >
-                рус
-              </button>
-            </div> */}
-
             <div
               className={
                 `person__wrapper` +
@@ -155,7 +135,19 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
               </div>
             </div>
 
-            <MessageInput />
+            <MessageInput
+              inputValue={inputPrefill}
+              setInputValue={setInputPrefill}
+            />
+
+            {/* ✅ Кнопка FAQ */}
+            <button
+              type="button"
+              className="faq__button border border-blue-500 text-blue-500 rounded-full px-4 py-2 hover:bg-blue-50 transition-colors mt-3"
+              onClick={() => setFaqModalOpen(true)}
+            >
+              Часто задаваемые вопросы
+            </button>
 
             <MessageList
               isSidebarOpen={isSidebarOpen}
@@ -167,6 +159,13 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
               onClose={() => setBinModalOpen(false)}
               onSubmitBin={handleBinSubmit}
               createMessage={createMessage}
+            />
+
+            {/* ✅ Модалка FAQ */}
+            <FaqModal
+              isOpen={isFaqModalOpen}
+              onClose={() => setFaqModalOpen(false)}
+              onSelect={(faq) => setInputPrefill(faq)}
             />
           </div>
         ) : (
@@ -208,7 +207,18 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
               </div>
             </div>
 
-            <MessageInput />
+            <MessageInput
+              inputValue={inputPrefill}
+              setInputValue={setInputPrefill}
+            />
+
+            <button
+              type="button"
+              className="btn special mt-4"
+              onClick={() => setFaqModalOpen(true)}
+            >
+              {t("faq.button")}
+            </button>
 
             <MessageList
               isSidebarOpen={isSidebarOpen}
@@ -220,6 +230,13 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
               onClose={() => setBinModalOpen(false)}
               onSubmitBin={handleBinSubmit}
               createMessage={createMessage}
+            />
+
+            {/* ✅ Модалка FAQ */}
+            <FaqModal
+              isOpen={isFaqModalOpen}
+              onClose={() => setFaqModalOpen(false)}
+              onSelect={(faq) => setInputPrefill(faq)}
             />
           </>
         )}
@@ -233,7 +250,7 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={toggleSidebar}
       />
-      <MessageInput />
+      <MessageInput inputValue={inputPrefill} setInputValue={setInputPrefill} />
     </div>
   );
 }
