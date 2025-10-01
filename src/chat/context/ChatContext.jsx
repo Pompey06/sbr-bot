@@ -158,6 +158,26 @@ const ChatProvider = ({ children }) => {
     setLocale(currentLanguage);
   }, [i18n.language]);
 
+  const updateFavicon = (lang) => {
+    let faviconPath = "/logo_ru.png"; // дефолт
+
+    if (lang === "қаз") faviconPath = "/logo_kz.png";
+    if (lang === "рус") faviconPath = "/logo_ru.png";
+    if (lang === "eng") faviconPath = "/logo_en.png";
+
+    const favicon = document.getElementById("dynamic-favicon");
+    if (favicon) {
+      favicon.href = faviconPath;
+    } else {
+      const link = document.createElement("link");
+      link.id = "dynamic-favicon";
+      link.rel = "icon";
+      link.type = "image/png";
+      link.href = faviconPath;
+      document.head.appendChild(link);
+    }
+  };
+
   const updateLocale = (lang) => {
     let newLocale = "ru";
     if (lang === "қаз") newLocale = "kz";
@@ -167,6 +187,7 @@ const ChatProvider = ({ children }) => {
     setLocale(newLocale);
     i18n.changeLanguage(lang);
     localStorage.setItem("locale", lang);
+    updateFavicon(lang);
   };
 
   const mapLangForNewApi = (loc) => (loc === "kz" ? "kk" : "ru");
