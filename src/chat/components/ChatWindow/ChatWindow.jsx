@@ -8,7 +8,9 @@ import Header from "../Header/Header";
 import "./ChatWindow.css";
 import chatI18n from "../../i18n";
 import { useTranslation } from "react-i18next";
-import personImage from "../../assets/person.png";
+import logoRu from "../../assets/logo_ru.png";
+import logoKz from "../../assets/logo_kz.png";
+import logoEn from "../../assets/logo_en.png";
 
 export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
   const { i18n } = useTranslation(undefined, { i18n: chatI18n });
@@ -38,6 +40,13 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
 
   const handleLanguageChange = (lang) => {
     updateLocale(lang);
+  };
+
+  const getLogoByLang = () => {
+    if (currentLang === "қаз") return logoKz;
+    if (currentLang === "рус") return logoRu;
+    if (currentLang === "eng") return logoEn;
+    return logoRu;
   };
 
   const [isSmall, setIsSmall] = useState(
@@ -116,6 +125,8 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
 
         {isSmall ? (
           <div className="responsive-wrapper">
+            <img src={getLogoByLang()} alt="logo" className="start-logo" />
+
             <div
               className={`person__wrapper${
                 useAltGreeting ? " person__wrapper--alt" : ""
@@ -198,6 +209,10 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
                 eng
               </button>
             </div>
+
+            {isEmptyChat && (
+              <img src={getLogoByLang()} alt="logo" className="start-logo" />
+            )}
 
             <div className="person__wrapper">
               {showAvatar && (

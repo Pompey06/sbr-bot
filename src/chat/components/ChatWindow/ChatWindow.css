@@ -17,6 +17,11 @@
   border-radius: 5px;
 }
 
+.start-logo {
+  max-width: 240px;
+  margin-bottom: -40px;
+}
+
 .language__button {
   line-height: 1;
   padding: 5px 16px;
@@ -124,15 +129,25 @@
   .chat-window-start .bottom__wrapper {
     width: 100%;
   }
+  .start-logo {
+    max-width: 180px;
+  }
 }
 
 @media (max-width: 950px) {
   .chat-window-start .message-list {
     align-items: center !important;
   }
+  .start-logo {
+    max-width: 160px;
+  }
 }
 
 @media (max-width: 700px) {
+  .start-logo {
+    max-width: 140px;
+    margin-bottom: -20px;
+  }
   .chat-window-start .chat-header {
     display: flex !important;
   }
