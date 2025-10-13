@@ -28,6 +28,7 @@ export default function Message({
   streaming,
   attachments,
   runnerBin,
+  chart,
   isCustomMessage = false,
   isAssistantResponse = false,
 }) {
@@ -45,6 +46,37 @@ export default function Message({
   const [hideCopyTooltip, setHideCopyTooltip] = useState(true);
 
   const showAvatar = import.meta.env.VITE_SHOW_AVATAR === "true";
+
+  useEffect(() => {
+    if (chart?.success) console.log("📈 chart_html:", chart.chart_html);
+  }, [chart]);
+
+  // UPDATED: подключаем Plotly.js если его нет и выполняем <script> после вставки chart_html
+  useEffect(() => {
+    if (!chart?.success || !chart.chart_html) return;
+
+    // Проверяем наличие Plotly в окне
+    if (!window.Plotly) {
+      const script = document.createElement("script");
+      script.src = "https://cdn.plot.ly/plotly-latest.min.js";
+      script.onload = runInlineScripts;
+      document.body.appendChild(script);
+    } else {
+      runInlineScripts();
+    }
+
+    function runInlineScripts() {
+      const container = document.querySelector(".chart-container");
+      if (!container) return;
+      const scripts = container.querySelectorAll("script");
+      scripts.forEach((oldScript) => {
+        const newScript = document.createElement("script");
+        if (oldScript.src) newScript.src = oldScript.src;
+        else newScript.textContent = oldScript.textContent;
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+      });
+    }
+  }, [chart]);
 
   const allFilePaths = React.useMemo(() => {
     if (filePaths && Array.isArray(filePaths)) {
@@ -205,9 +237,9 @@ export default function Message({
           remarkPlugins={[remarkGfm, remarkBreaks]}
           components={{
             a: ({ href, children, ...props }) => (
-              <a 
-                href={href} 
-                className="message-link" 
+              <a
+                href={href}
+                className="message-link"
                 target="_blank"
                 rel="noopener noreferrer"
                 {...props}
@@ -219,7 +251,6 @@ export default function Message({
         >
           {text}
         </ReactMarkdown>
-
         {/* Ссылки на filePaths (если есть) */}
         {!streaming && allFilePaths.length > 0 && (
           <div className="mt-2 fade-in">
@@ -243,7 +274,6 @@ export default function Message({
             </div>
           </div>
         )}
-
         {/* Блок attachments (если есть) */}
         {Array.isArray(attachments) && attachments.length > 0 && (
           <div className="file-download-container fade-in">
@@ -319,6 +349,20 @@ export default function Message({
               );
             })()}
           </div>
+        )}
+        {chart?.success && chart.chart_html && (
+          <div
+            className="chart-container fade-in mt-4"
+            dangerouslySetInnerHTML={{
+              __html: chart.chart_html
+                .replace(/<\/?html[^>]*>/g, "")
+                .replace(/<\/?body[^>]*>/g, "")
+                .replace(
+                  /<div([^>]*)>/,
+                  '<div$1 style="max-width:100%;overflow-x:auto;">',
+                ),
+            }}
+          />
         )}
 
         {/* ========== Кнопка «Копировать» ========== */}

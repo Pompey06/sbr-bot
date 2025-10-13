@@ -725,9 +725,9 @@ const ChatProvider = ({ children }) => {
       subcategory: apSubcategory,
       subcategory_report: apSubReport,
     } = additionalParams;
-
     setIsTyping(true);
 
+    // 1️⃣ добавляем сообщение пользователя
     setChats((prevChats) =>
       prevChats.map((chat) => {
         if (
@@ -748,6 +748,7 @@ const ChatProvider = ({ children }) => {
       }),
     );
 
+    // 2️⃣ добавляем временное сообщение ассистента (пустое)
     const tempAssistantMessage = {
       text: "",
       isUser: false,
@@ -774,9 +775,9 @@ const ChatProvider = ({ children }) => {
     );
 
     try {
+      // 🔧 функция обновления последнего сообщения во время стрима
       const updateLastMessage = (newText, streamingFlag = true) => {
         const formattedText = newText.replace(/\\n/g, "\n");
-
         setChats((prevChats) =>
           prevChats.map((chat) => {
             const idx = chat.messages.findIndex((msg) => msg.streaming);
@@ -795,43 +796,35 @@ const ChatProvider = ({ children }) => {
 
       let accumulatedText = "";
 
-      // === Новый однократный JSON-эндпойнт на B-бэке ===
-      let currentChatRef = chats.find(
-        (c) =>
-          String(c.id) === String(currentChatId) ||
-          (c.id === null && c === chats[0]),
-      );
-      // Если у текущего чата ещё нет id — создаём сессию заранее
-      if (!currentChatRef?.id) {
-        // Название можно сделать из первых символов запроса
+      // 3️⃣ гарантируем session_id
+      let sessionId = currentChatId;
+      if (!sessionId) {
         const sessionName = (text || "New chat").slice(0, 50);
-        const sid = await createBackendSession({ sessionName });
-        if (sid) {
-          setCurrentChatId(sid);
+        sessionId = await createBackendSession({ sessionName });
+        if (sessionId) {
+          setCurrentChatId(sessionId);
           setChats((prev) => {
-            // обновим первый/текущий пустой чат id'шником
-            const idx = prev.findIndex(
-              (c) =>
-                String(c.id) === String(currentChatId) ||
-                (c.id === null && c === prev[0]),
+            const ci = prev.findIndex((c) =>
+              c.messages.some((m) => m.streaming),
             );
-            if (idx === -1) return prev;
+            if (ci === -1) return prev;
             const updated = {
-              ...prev[idx],
-              id: sid,
-              title: sessionName,
+              ...prev[ci],
+              id: sessionId,
+              title: prev[ci].title ?? sessionName,
               isEmpty: false,
             };
-            return [...prev.slice(0, idx), updated, ...prev.slice(idx + 1)];
+            const copy = [...prev];
+            copy[ci] = updated;
+            return copy;
           });
-          // пересчитаем ссылку
-          currentChatRef = { ...currentChatRef, id: sid };
         }
       }
 
+      // 4️⃣ делаем запрос
       const body = {
         query: text,
-        session_id: currentChatRef?.id || null, // теперь почти всегда уже есть
+        session_id: sessionId || null,
         user_id: userId,
         language: mapLangForNewApi(locale),
       };
@@ -840,102 +833,75 @@ const ChatProvider = ({ children }) => {
         headers: { "Content-Type": "application/json" },
         withCredentials: false,
       });
-      // UPDATED: включаем message_id
+      console.log("💬 /api/chat response:", data);
+
       const {
         response: answer,
         session_id: sid,
         sql_query,
         raw_data,
         error: isError,
-        message_id, // UPDATED
+        message_id,
+        chart,
       } = data || {};
 
-      // Текст ответа (или текст ошибки от бэка)
+      // 5️⃣ обновляем текст бота
       accumulatedText += typeof answer === "string" ? answer : "";
       updateLastMessage(accumulatedText, false);
-      // UPDATED: сохраняем message_id сразу после получения ответа
-      try {
-        if (sid && message_id) {
-          // найдём индекс последнего бот-сообщения
-          const botIdx =
-            chats.find(
-              (c) =>
-                String(c.id) === String(currentChatId) ||
-                (c.id === null && c === chats[0]),
-            )?.messages.length ?? 0;
 
-          console.log("💾 saving message_id from /api/chat:", {
-            sid,
-            botIdx,
-            message_id,
-          });
-
-          saveMessageId(sid, botIdx, message_id);
-        } else {
-          console.warn("⚠️ message_id not present in /api/chat response", data);
-        }
-      } catch (err) {
-        console.error("❌ saveMessageId failed:", err);
-      }
-
-      // Проставить доп. поля (sql/raw) на последнее бот-сообщение
+      // UPDATED // ChatContext.jsx — не опираемся на флаг `streaming`, который уже мог стать false в updateLastMessage
       setChats((prev) => {
-        const ci = prev.findIndex((c) => c.messages.some((m) => m.streaming));
+        // 1) Находим чат, в котором есть *последнее* ассистентское сообщение
+        const ci = prev.findIndex((c) =>
+          c.messages.some((m) => m.isAssistantResponse),
+        );
         if (ci === -1) return prev;
-        const msgIdx = prev[ci].messages.findIndex((m) => m.streaming);
+
+        // 2) Берём индекс последнего ассистентского сообщения
+        let msgIdx = -1;
+        for (let i = prev[ci].messages.length - 1; i >= 0; i--) {
+          if (prev[ci].messages[i].isAssistantResponse) {
+            msgIdx = i;
+            break;
+          }
+        }
+        if (msgIdx === -1) return prev;
+
         const updatedMsg = {
           ...prev[ci].messages[msgIdx],
           text: accumulatedText,
-          streaming: false,
-          // новые поля из B-бэка
+          streaming: false, // UPDATED
+          isAssistantResponse: true, // UPDATED
           sqlQuery: sql_query || "",
           rawData: Array.isArray(raw_data) ? raw_data : [],
+          chart: chart?.success ? chart : null, // UPDATED
           isError: !!isError,
         };
-        const messages = [...prev[ci].messages];
-        messages[msgIdx] = updatedMsg;
+
+        const updatedMessages = [...prev[ci].messages];
+        updatedMessages[msgIdx] = updatedMsg;
+
         const chatUpdated = {
           ...prev[ci],
-          messages,
-          ...(sid
-            ? {
-                id: sid,
-                title: prev[ci].title ?? (text || "New chat").slice(0, 50),
-              }
-            : {}),
+          messages: updatedMessages,
+          id: sid || prev[ci].id,
+          title: prev[ci].title ?? (text || "New chat").slice(0, 50),
           lastUpdated: new Date().toISOString(),
         };
-        // ... после const chatUpdated = { ... }
-        const updatedList = [
-          ...prev.slice(0, ci),
-          chatUpdated,
-          ...prev.slice(ci + 1),
-        ];
 
-        // UPDATED: сохраняем message_id сразу после успешного ответа от /api/chat
-        try {
-          const botMessageIndex =
-            msgIdx >= 0 ? msgIdx : chatUpdated.messages.length - 1;
-          const chatKey = chatUpdated.id || sid;
-
-          if (chatKey && data?.message_id) {
-            console.log("💾 saveMessageId:", {
-              chatKey,
-              botMessageIndex,
-              message_id: data.message_id,
-            });
-            saveMessageId(chatKey, botMessageIndex, data.message_id);
-          } else {
-            console.warn("⚠️ message_id отсутствует в ответе:", data);
-          }
-        } catch (err) {
-          console.error("Ошибка при сохранении message_id:", err);
-        }
-
-        return updatedList;
+        return [...prev.slice(0, ci), chatUpdated, ...prev.slice(ci + 1)];
       });
 
-      // Зафиксировать/обновить session_id как текущий id чата
+      // 7️⃣ сохраняем message_id
+      try {
+        if (sid && message_id) {
+          saveMessageId(sid, 0, message_id); // индекс можно уточнить
+        }
+      } catch (err) {
+        console.error("Ошибка при сохранении message_id:", err);
+      }
+
+      // 8️⃣ обновляем активный чат
       if (sid) {
         setCurrentChatId(sid);
       }
@@ -1267,6 +1233,22 @@ const ChatProvider = ({ children }) => {
       }),
     );
   };
+
+  // === Отладка chart ===
+  useEffect(() => {
+    const currentChat = chats.find(
+      (c) =>
+        String(c.id) === String(currentChatId) ||
+        (c.id === null && currentChatId === null),
+    );
+    if (!currentChat) return;
+
+    const lastMessage = currentChat.messages[currentChat.messages.length - 1];
+    if (lastMessage?.chart && lastMessage.chart.success) {
+      console.log("📊 Chart detected:", lastMessage.chart);
+      console.log("📈 chart_html:", lastMessage.chart.chart_html);
+    }
+  }, [chats, currentChatId]);
 
   return (
     <ChatContext.Provider

@@ -11,6 +11,15 @@
   gap: 8px; /* расстояние между аватаром и текстом */
 }
 
+.chart-container {
+  width: 100%;
+  overflow-x: auto;
+}
+.chart-container iframe,
+.chart-container div {
+  max-width: 100%;
+}
+
 .message-link {
   color: #007bff;
   text-decoration: underline;
