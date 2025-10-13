@@ -10,6 +10,7 @@ import {
   markChatAsDeleted,
   saveBadFeedbackPromptState,
   saveFeedbackState,
+  saveMessageId,
 } from "../utils/feedbackStorage";
 import mockCategories from "./mockCategories.json";
 
@@ -207,6 +208,24 @@ const ChatProvider = ({ children }) => {
         isButton: false,
         timestamp: m?.timestamp,
       }));
+
+      // UPDATED: гарантируем сохранение message_id для всех сообщений ассистента
+      try {
+        let botIndex = 0;
+        (data?.messages || []).forEach((m) => {
+          if (m?.role === "assistant" && m?.id) {
+            saveMessageId(sessionId, botIndex, m.id);
+            console.log("💾 stored message_id:", {
+              chat: sessionId,
+              botIndex,
+              message_id: m.id,
+            });
+            botIndex++;
+          }
+        });
+      } catch (err) {
+        console.error("restore message_id failed:", err);
+      }
 
       // восстановление filePaths для бот-ответов
       const savedFilePaths = getFilePaths(sessionId);
@@ -821,17 +840,43 @@ const ChatProvider = ({ children }) => {
         headers: { "Content-Type": "application/json" },
         withCredentials: false,
       });
+      // UPDATED: включаем message_id
       const {
         response: answer,
         session_id: sid,
         sql_query,
         raw_data,
         error: isError,
+        message_id, // UPDATED
       } = data || {};
 
       // Текст ответа (или текст ошибки от бэка)
       accumulatedText += typeof answer === "string" ? answer : "";
       updateLastMessage(accumulatedText, false);
+      // UPDATED: сохраняем message_id сразу после получения ответа
+      try {
+        if (sid && message_id) {
+          // найдём индекс последнего бот-сообщения
+          const botIdx =
+            chats.find(
+              (c) =>
+                String(c.id) === String(currentChatId) ||
+                (c.id === null && c === chats[0]),
+            )?.messages.length ?? 0;
+
+          console.log("💾 saving message_id from /api/chat:", {
+            sid,
+            botIdx,
+            message_id,
+          });
+
+          saveMessageId(sid, botIdx, message_id);
+        } else {
+          console.warn("⚠️ message_id not present in /api/chat response", data);
+        }
+      } catch (err) {
+        console.error("❌ saveMessageId failed:", err);
+      }
 
       // Проставить доп. поля (sql/raw) на последнее бот-сообщение
       setChats((prev) => {
@@ -860,7 +905,34 @@ const ChatProvider = ({ children }) => {
             : {}),
           lastUpdated: new Date().toISOString(),
         };
-        return [...prev.slice(0, ci), chatUpdated, ...prev.slice(ci + 1)];
+        // ... после const chatUpdated = { ... }
+        const updatedList = [
+          ...prev.slice(0, ci),
+          chatUpdated,
+          ...prev.slice(ci + 1),
+        ];
+
+        // UPDATED: сохраняем message_id сразу после успешного ответа от /api/chat
+        try {
+          const botMessageIndex =
+            msgIdx >= 0 ? msgIdx : chatUpdated.messages.length - 1;
+          const chatKey = chatUpdated.id || sid;
+
+          if (chatKey && data?.message_id) {
+            console.log("💾 saveMessageId:", {
+              chatKey,
+              botMessageIndex,
+              message_id: data.message_id,
+            });
+            saveMessageId(chatKey, botMessageIndex, data.message_id);
+          } else {
+            console.warn("⚠️ message_id отсутствует в ответе:", data);
+          }
+        } catch (err) {
+          console.error("Ошибка при сохранении message_id:", err);
+        }
+
+        return updatedList;
       });
 
       // Зафиксировать/обновить session_id как текущий id чата
@@ -1110,64 +1182,53 @@ const ChatProvider = ({ children }) => {
     // Возвращаем индекс бота (каждый второй индекс)
     return Math.floor(messageCount / 2) * 2 + 1;
   };
-
-  const sendFeedback = async (rate, text, messageIndex) => {
+  // UPDATED: фикс запроса на B-бэк (ChatContext.jsx)
+  const sendFeedback = async (messageId, rate, text) => {
     try {
+      if (!messageId) {
+        console.warn("sendFeedback: messageId отсутствует");
+        return;
+      }
+
       const currentChat = chats.find(
         (c) =>
           String(c.id) === String(currentChatId) ||
           (c.id === null && c === chats[0]),
       );
-      if (!currentChat) throw new Error("Chat not found");
+      if (!currentChat?.id) {
+        console.warn("sendFeedback: нет session_id для текущего чата");
+        return;
+      }
 
-      const response = await api.post(
-        `/conversation/by-id/${currentChat.id}/add-feedback`,
+      const baseURL =
+        import.meta.env.VITE_API_URL_NEW || "http://172.16.17.4:8001";
+      const feedbackType = rate === "good" ? "like" : "dislike";
+
+      const payload = {
+        session_id: currentChat.id,
+        user_id: userId,
+        feedback_type: feedbackType,
+        feedback_text: text || "",
+      };
+
+      console.log("➡️ Отправка фидбека:", {
+        url: `${baseURL}/api/messages/${messageId}/feedback`,
+        payload,
+      }); // UPDATED debug
+
+      const response = await axios.post(
+        `${baseURL}/api/messages/${messageId}/feedback`,
+        payload,
         {
-          message_index: messageIndex,
-          rate: rate,
-          text: text,
+          headers: { "Content-Type": "application/json" },
+          withCredentials: false,
         },
       );
 
-      // Сохраняем информацию об отправленном фидбеке
-      saveFeedbackState(currentChat.id, messageIndex, rate);
-      // Удаляем сообщение с фидбеком из чата
-      setTimeout(() => {
-        removeFeedbackMessage(messageIndex);
-      }, 0);
-
-      // Если пользователь отправил плохой отзыв, добавляем сообщение для регистрации
-      if (rate === "bad") {
-        saveBadFeedbackPromptState(currentChat.id);
-        setChats((prevChats) =>
-          prevChats.map((chat) => {
-            if (
-              String(chat.id) === String(currentChatId) ||
-              (chat.id === null && currentChatId === null)
-            ) {
-              return {
-                ...chat,
-                messages: [
-                  ...chat.messages,
-                  {
-                    text: t("feedback.badFeedbackPromptText"), // "Для регистрации заполните форму ниже"
-                    isUser: false,
-                    isFeedback: false,
-                    badFeedbackPrompt: true,
-                    isCustomMessage: true,
-                  },
-                ],
-              };
-            }
-            return chat;
-          }),
-        );
-      }
-
+      console.log("✅ Ответ от сервера:", response.data);
       return response.data;
     } catch (error) {
-      console.error("Error sending feedback:", error);
-      throw error;
+      console.error("❌ Ошибка при отправке фидбека:", error);
     }
   };
 
