@@ -34,6 +34,7 @@ const ChatProvider = ({ children }) => {
     baseURL: import.meta.env.VITE_API_URL_NEW || "http://172.16.17.4:8001",
     withCredentials: false,
   });
+  const USE_STREAMING_API = false;
   // helper: создание backend-сессии (возвращает session_id)
   const getOrCreateUserId = () => {
     try {
@@ -667,7 +668,7 @@ const ChatProvider = ({ children }) => {
     }
   };
 
-  async function createMessage(
+  async function createMessageStatic(
     text,
     isFeedback = false,
     additionalParams = {},
@@ -681,7 +682,7 @@ const ChatProvider = ({ children }) => {
     } = additionalParams;
     setIsTyping(true);
 
-    // 1️⃣ добавляем сообщение пользователя
+    // 1️⃣ Добавляем сообщение пользователя
     setChats((prevChats) =>
       prevChats.map((chat) => {
         if (
@@ -702,7 +703,7 @@ const ChatProvider = ({ children }) => {
       }),
     );
 
-    // 2️⃣ добавляем временное сообщение ассистента (пустое)
+    // 2️⃣ Добавляем временное сообщение ассистента
     const tempAssistantMessage = {
       text: "",
       isUser: false,
@@ -729,7 +730,7 @@ const ChatProvider = ({ children }) => {
     );
 
     try {
-      // 🔧 функция обновления последнего сообщения во время стрима
+      // Функция обновления текста последнего сообщения
       const updateLastMessage = (newText, streamingFlag = true) => {
         const formattedText = newText.replace(/\\n/g, "\n");
         setChats((prevChats) =>
@@ -738,7 +739,7 @@ const ChatProvider = ({ children }) => {
             if (idx === -1) return chat;
             const updatedMsg = {
               ...chat.messages[idx],
-              text: formattedText + (streamingFlag ? " |" : ""),
+              text: formattedText,
               streaming: streamingFlag,
             };
             const updatedMessages = [...chat.messages];
@@ -750,7 +751,7 @@ const ChatProvider = ({ children }) => {
 
       let accumulatedText = "";
 
-      // 3️⃣ гарантируем session_id
+      // 3️⃣ Гарантируем наличие session_id
       let sessionId = currentChatId;
       if (!sessionId) {
         const sessionName = (text || "New chat").slice(0, 50);
@@ -775,7 +776,7 @@ const ChatProvider = ({ children }) => {
         }
       }
 
-      // 4️⃣ делаем запрос
+      // 4️⃣ Обычный запрос на API
       const body = {
         query: text,
         session_id: sessionId || null,
@@ -783,39 +784,12 @@ const ChatProvider = ({ children }) => {
         language: mapLangForNewApi(locale),
       };
 
-      /*  ================= MOCK RESPONSE (disable backend) ================= */
-
       const { data } = await apiNew.post("/api/chat", body, {
         headers: { "Content-Type": "application/json" },
         withCredentials: false,
       });
-      console.log("💬 /api/chat response:", data);
 
-      //   const data = {
-      //     response: "Тестовый ответ ассистента. Здесь текст и Excel-файл.",
-      //     session_id: "mock-session-1",
-      //     message_id: "mock-message-1",
-      //     sql_query: "",
-      //     raw_data: [],
-      //     error: false,
-      //     chart: {
-      //       success: true,
-      //       chart_html: `
-      //   <div id="chartTest" style="width:100%;height:300px;"></div>
-      //   <script>
-      //     document.addEventListener("DOMContentLoaded", function(){
-      //       const trace = { x: [1, 2, 3], y: [2, 5, 3], type: 'scatter' };
-      //       Plotly.newPlot('chartTest', [trace], { title: 'Mock Chart' });
-      //     });
-      //   </script>
-      // `,
-      //     },
-      //     has_excel: true,
-      //     excel_file: "mock-excel-id-123",
-      //   };
-      /*  ================= END MOCK RESPONSE ================= */
-
-      console.log("💬 /api/chat response:", data);
+      console.log("💬 /api/chat static response:", data);
 
       const {
         response: answer,
@@ -825,21 +799,22 @@ const ChatProvider = ({ children }) => {
         error: isError,
         message_id,
         chart,
+        has_excel,
+        excel_file,
+        show_table,
+        table_columns,
       } = data || {};
 
-      // 5️⃣ обновляем текст бота
       accumulatedText += typeof answer === "string" ? answer : "";
       updateLastMessage(accumulatedText, false);
 
-      // UPDATED // ChatContext.jsx — не опираемся на флаг `streaming`, который уже мог стать false в updateLastMessage
+      // 5️⃣ Обновляем последнее сообщение ассистента
       setChats((prev) => {
-        // 1) Находим чат, в котором есть *последнее* ассистентское сообщение
         const ci = prev.findIndex((c) =>
           c.messages.some((m) => m.isAssistantResponse),
         );
         if (ci === -1) return prev;
 
-        // 2) Берём индекс последнего ассистентского сообщения
         let msgIdx = -1;
         for (let i = prev[ci].messages.length - 1; i >= 0; i--) {
           if (prev[ci].messages[i].isAssistantResponse) {
@@ -852,14 +827,16 @@ const ChatProvider = ({ children }) => {
         const updatedMsg = {
           ...prev[ci].messages[msgIdx],
           text: accumulatedText,
-          streaming: true, // UPDATED
-          isAssistantResponse: true, // UPDATED
+          streaming: false,
+          isAssistantResponse: true,
           sqlQuery: sql_query || "",
           rawData: Array.isArray(raw_data) ? raw_data : [],
-          chart: chart?.success ? chart : null, // UPDATED
+          chart: chart?.success ? chart : null,
           isError: !!isError,
-          excelFile: data.excel_file || null,
-          hasExcel: data.has_excel || false,
+          excelFile: excel_file || null,
+          hasExcel: has_excel || false,
+          showTable: show_table || false,
+          tableColumns: table_columns || [],
         };
 
         const updatedMessages = [...prev[ci].messages];
@@ -876,16 +853,15 @@ const ChatProvider = ({ children }) => {
         return [...prev.slice(0, ci), chatUpdated, ...prev.slice(ci + 1)];
       });
 
-      // 7️⃣ сохраняем message_id
+      // 6️⃣ Сохраняем message_id
       try {
         if (sid && message_id) {
-          saveMessageId(sid, 0, message_id); // индекс можно уточнить
+          saveMessageId(sid, 0, message_id);
         }
       } catch (err) {
         console.error("Ошибка при сохранении message_id:", err);
       }
 
-      // 8️⃣ обновляем активный чат
       if (sid) {
         setCurrentChatId(sid);
       }
@@ -1072,6 +1048,120 @@ const ChatProvider = ({ children }) => {
     }
   };
 
+  async function createMessageStreaming(
+    text,
+    isFeedback = false,
+    additionalParams = {},
+  ) {
+    if (!text) return;
+
+    const {
+      category: apCategory,
+      subcategory: apSubcategory,
+      subcategory_report: apSubReport,
+    } = additionalParams;
+    setIsTyping(true);
+
+    setChats((prevChats) =>
+      prevChats.map((chat) => {
+        if (
+          String(chat.id) === String(currentChatId) ||
+          (chat.id === null && chat === prevChats[0])
+        ) {
+          return {
+            ...chat,
+            isEmpty: false,
+            messages: [
+              ...chat.messages.filter((msg) => !msg.isButton),
+              { text, isUser: true, isFeedback },
+              {
+                text: "",
+                isUser: false,
+                isAssistantResponse: true,
+                streaming: true,
+              },
+            ],
+          };
+        }
+        return chat;
+      }),
+    );
+
+    try {
+      const body = {
+        query: text,
+        session_id: currentChatId,
+        user_id: userId,
+        language: mapLangForNewApi(locale),
+        streaming: true,
+      };
+
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_API_URL_NEW || "http://172.16.17.4:8001"
+        }/api/chat`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+      );
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let accumulatedText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
+
+        for (const line of lines) {
+          const obj = JSON.parse(line.replace(/^data:\s*/, ""));
+          if (obj.type === "text") {
+            accumulatedText += obj.content;
+            setChats((prev) =>
+              prev.map((chat) => {
+                const msgIdx = chat.messages.findIndex((m) => m.streaming);
+                if (msgIdx === -1) return chat;
+                const copy = [...chat.messages];
+                copy[msgIdx] = { ...copy[msgIdx], text: accumulatedText };
+                return { ...chat, messages: copy };
+              }),
+            );
+          } else if (obj.type === "complete") {
+            setChats((prev) =>
+              prev.map((chat) => {
+                const msgIdx = chat.messages.findIndex((m) => m.streaming);
+                if (msgIdx === -1) return chat;
+                const copy = [...chat.messages];
+                copy[msgIdx] = {
+                  ...copy[msgIdx],
+                  text: accumulatedText || obj.response || "",
+                  streaming: false,
+                  sqlQuery: obj.sql_query || "",
+                  rawData: obj.raw_data || [],
+                  hasExcel: obj.has_excel || false,
+                  excelFile: obj.excel_file || null,
+                  showTable: obj.show_table || false,
+                  tableColumns: obj.table_columns || [],
+                };
+                return { ...chat, messages: copy };
+              }),
+            );
+          } else if (obj.type === "end") {
+            break;
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Ошибка стриминга:", err);
+    } finally {
+      setIsTyping(false);
+    }
+  }
+
   const removeFeedbackMessage = (messageIndex) => {
     setChats((prevChats) =>
       prevChats.map((chat) => {
@@ -1233,6 +1323,10 @@ const ChatProvider = ({ children }) => {
       console.log("📈 chart_html:", lastMessage.chart.chart_html);
     }
   }, [chats, currentChatId]);
+
+  const createMessage = USE_STREAMING_API
+    ? createMessageStreaming
+    : createMessageStatic;
 
   return (
     <ChatContext.Provider

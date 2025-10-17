@@ -27,10 +27,12 @@ export default function Message({
   botMessageIndex,
   streaming,
   attachments,
-  runnerBin,
   chart,
   excelFile,
   hasExcel,
+  showTable,
+  tableColumns,
+  tableData,
   isCustomMessage = false,
   isAssistantResponse = false,
 }) {
@@ -253,6 +255,44 @@ export default function Message({
         >
           {text}
         </ReactMarkdown>
+        {showTable && Array.isArray(tableData) && tableData.length > 0 && (
+          <div className="fade-in mt-4 overflow-x-auto max-w-full">
+            <table className="min-w-full border border-gray-300 text-sm text-left">
+              <thead className="bg-gray-100">
+                <tr>
+                  {tableColumns.map((col) => (
+                    <th
+                      key={col}
+                      className="border border-gray-300 px-3 py-2 font-medium text-gray-700"
+                    >
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {tableData.map((row, rowIndex) => (
+                  <tr
+                    key={rowIndex}
+                    className={rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                  >
+                    {tableColumns.map((col) => (
+                      <td
+                        key={col}
+                        className="border border-gray-300 px-3 py-2 text-gray-800"
+                      >
+                        {typeof row[col] === "number"
+                          ? row[col].toLocaleString("ru-RU")
+                          : row[col] ?? "-"}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         {/* Excel download block */}
         {hasExcel && excelFile && (
           <div className="file-download-container fade-in mt-2">
