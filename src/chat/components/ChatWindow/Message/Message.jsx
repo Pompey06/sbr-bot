@@ -261,15 +261,29 @@ export default function Message({
               onClick={async (e) => {
                 e.preventDefault();
                 try {
+                  // excelFile может быть строкой или объектом
+                  const fileId =
+                    typeof excelFile === "string"
+                      ? excelFile
+                      : excelFile?.file_id || excelFile?.id;
+
+                  if (!fileId) {
+                    console.error("❌ Нет file_id для Excel-файла:", excelFile);
+                    return;
+                  }
+
                   const response = await api.get(
-                    `/api/excel/download/${excelFile}`,
-                    { responseType: "blob" },
+                    `/api/excel/download/${fileId}`,
+                    {
+                      responseType: "blob",
+                    },
                   );
                   const blob = new Blob([response.data]);
                   const url = window.URL.createObjectURL(blob);
                   const link = document.createElement("a");
                   link.href = url;
-                  link.download = `data_export_${excelFile}.xlsx`;
+                  link.download =
+                    excelFile?.filename || `data_export_${fileId}.xlsx`;
                   document.body.appendChild(link);
                   link.click();
                   document.body.removeChild(link);
@@ -281,7 +295,11 @@ export default function Message({
             >
               <img src={downloadIcon} alt="Excel file" className="file-icon" />
               <span className="file-name">
-                data_export_{excelFile.slice(0, 8)}.xlsx
+                {excelFile?.filename
+                  ? excelFile.filename
+                  : `data_export_${(excelFile?.file_id || excelFile)
+                      ?.toString()
+                      .slice(0, 8)}.xlsx`}
               </span>
             </a>
           </div>

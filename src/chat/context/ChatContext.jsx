@@ -605,73 +605,27 @@ const ChatProvider = ({ children }) => {
   }, [i18n.language, categories]);
 
   const createNewChat = () => {
-    const currentChat = chats.find(
-      (c) =>
-        String(c.id) === String(currentChatId) ||
-        (c.id === null && currentChatId === null),
-    );
-    if (currentChat?.isBinChat) {
-      // сбрасываем режим BIN и создаём новый дефолтный чат
-      setIsInBinFlow(false);
-      const newChat = createDefaultChat();
-      // помещаем его в начало, чтобы find(c => c.id===null) вернул именно его
-      setChats((prev) => [newChat, ...prev]);
-      // явно делаем его активным
-      setCurrentChatId(newChat.id); // newChat.id === null, но гарантированно первый
-      fetchInitialMessages();
-      return;
-    }
+    // Сброс текущего состояния
     setCurrentCategory(null);
     setCurrentSubcategory(null);
     setCategoryFilter(null);
 
-    // Если мы в пустом чате - перезагружаем его состояние
-    if (currentChat?.isEmpty) {
-      setChats((prev) =>
-        prev.map((chat) => {
-          if (chat.isEmpty) {
-            return {
-              ...createDefaultChat(),
-              id: null,
-              isEmpty: true,
-              buttonsWereShown: false,
-            };
-          }
-          return chat;
-        }),
-      );
-      fetchInitialMessages(); // Добавляем явный вызов
-      return;
-    }
-
-    // Находим существующий пустой чат
-    const emptyChat = chats.find((c) => c.isEmpty);
-
-    // Если есть пустой чат - переключаемся на него и перезагружаем кнопки
-    if (emptyChat) {
-      setCurrentChatId(null);
-      setChats((prev) =>
-        prev.map((chat) => {
-          if (chat.isEmpty) {
-            return {
-              ...createDefaultChat(),
-              id: null,
-              isEmpty: true,
-              buttonsWereShown: false,
-            };
-          }
-          return chat;
-        }),
-      );
-      fetchInitialMessages(); // Добавляем явный вызов
-      return;
-    }
-
-    // Если нет пустого чата - создаём новый
+    // Создаём новый дефолтный чат
     const newChat = createDefaultChat();
-    setChats((prev) => [...prev, newChat]);
+
+    setChats((prev) => {
+      // Добавляем в начало, чтобы он был первым и активным
+      const updated = [newChat, ...prev.filter((c) => c.id !== null)];
+      return updated;
+    });
+
+    // Сбрасываем текущий чат
     setCurrentChatId(null);
-    fetchInitialMessages(); // Добавляем явный вызов
+
+    // Явно перезагружаем кнопки приветствия
+    fetchInitialMessages();
+
+    console.log("🆕 Новый чат создан");
   };
 
   const switchChat = async (chatId) => {
