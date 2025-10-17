@@ -101,6 +101,8 @@ export default function MessageList({ isSidebarOpen, toggleSidebar }) {
         attachments={message.attachments}
         runnerBin={message.runnerBin}
         chart={message.chart}
+        excelFile={message.excelFile}
+        hasExcel={message.hasExcel}
       >
         {/* Текст для начальных категорий */}
         {index === 0 && showInitialButtons && (

@@ -829,10 +829,38 @@ const ChatProvider = ({ children }) => {
         language: mapLangForNewApi(locale),
       };
 
+      /*  ================= MOCK RESPONSE (disable backend) ================= */
+
       const { data } = await apiNew.post("/api/chat", body, {
         headers: { "Content-Type": "application/json" },
         withCredentials: false,
       });
+      console.log("💬 /api/chat response:", data);
+
+      //   const data = {
+      //     response: "Тестовый ответ ассистента. Здесь текст и Excel-файл.",
+      //     session_id: "mock-session-1",
+      //     message_id: "mock-message-1",
+      //     sql_query: "",
+      //     raw_data: [],
+      //     error: false,
+      //     chart: {
+      //       success: true,
+      //       chart_html: `
+      //   <div id="chartTest" style="width:100%;height:300px;"></div>
+      //   <script>
+      //     document.addEventListener("DOMContentLoaded", function(){
+      //       const trace = { x: [1, 2, 3], y: [2, 5, 3], type: 'scatter' };
+      //       Plotly.newPlot('chartTest', [trace], { title: 'Mock Chart' });
+      //     });
+      //   </script>
+      // `,
+      //     },
+      //     has_excel: true,
+      //     excel_file: "mock-excel-id-123",
+      //   };
+      /*  ================= END MOCK RESPONSE ================= */
+
       console.log("💬 /api/chat response:", data);
 
       const {
@@ -870,12 +898,14 @@ const ChatProvider = ({ children }) => {
         const updatedMsg = {
           ...prev[ci].messages[msgIdx],
           text: accumulatedText,
-          streaming: false, // UPDATED
+          streaming: true, // UPDATED
           isAssistantResponse: true, // UPDATED
           sqlQuery: sql_query || "",
           rawData: Array.isArray(raw_data) ? raw_data : [],
           chart: chart?.success ? chart : null, // UPDATED
           isError: !!isError,
+          excelFile: data.excel_file || null,
+          hasExcel: data.has_excel || false,
         };
 
         const updatedMessages = [...prev[ci].messages];

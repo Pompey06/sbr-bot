@@ -29,14 +29,16 @@ export default function Message({
   attachments,
   runnerBin,
   chart,
+  excelFile,
+  hasExcel,
   isCustomMessage = false,
   isAssistantResponse = false,
 }) {
   const { t, i18n } = useTranslation(undefined, { i18n: chatI18n });
   const [fileReadyMap, setFileReadyMap] = useState({});
   const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
-    withCredentials: true,
+    baseURL: import.meta.env.VITE_API_URL_NEW || "http://172.16.17.4:8001",
+    withCredentials: false,
   });
   const { downloadForm, chats, currentChatId } = useContext(ChatContext);
   const [fileBlobMap, setFileBlobMap] = useState({});
@@ -251,6 +253,40 @@ export default function Message({
         >
           {text}
         </ReactMarkdown>
+        {/* Excel download block */}
+        {hasExcel && excelFile && (
+          <div className="file-download-container fade-in mt-2">
+            <a
+              href="#"
+              onClick={async (e) => {
+                e.preventDefault();
+                try {
+                  const response = await api.get(
+                    `/api/excel/download/${excelFile}`,
+                    { responseType: "blob" },
+                  );
+                  const blob = new Blob([response.data]);
+                  const url = window.URL.createObjectURL(blob);
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.download = `data_export_${excelFile}.xlsx`;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                } catch (err) {
+                  console.error("Ошибка при скачивании Excel:", err);
+                }
+              }}
+              className="file-download-link"
+            >
+              <img src={downloadIcon} alt="Excel file" className="file-icon" />
+              <span className="file-name">
+                data_export_{excelFile.slice(0, 8)}.xlsx
+              </span>
+            </a>
+          </div>
+        )}
+
         {/* Ссылки на filePaths (если есть) */}
         {!streaming && allFilePaths.length > 0 && (
           <div className="mt-2 fade-in">
