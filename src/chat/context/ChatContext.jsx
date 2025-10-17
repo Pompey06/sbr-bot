@@ -34,7 +34,7 @@ const ChatProvider = ({ children }) => {
     baseURL: import.meta.env.VITE_API_URL_NEW || "http://172.16.17.4:8001",
     withCredentials: false,
   });
-  const USE_STREAMING_API = false;
+  const USE_STREAMING_API = true;
   // helper: создание backend-сессии (возвращает session_id)
   const getOrCreateUserId = () => {
     try {
@@ -1055,13 +1055,9 @@ const ChatProvider = ({ children }) => {
   ) {
     if (!text) return;
 
-    const {
-      category: apCategory,
-      subcategory: apSubcategory,
-      subcategory_report: apSubReport,
-    } = additionalParams;
     setIsTyping(true);
 
+    // === добавляем сообщение пользователя ===
     setChats((prevChats) =>
       prevChats.map((chat) => {
         if (
@@ -1071,15 +1067,10 @@ const ChatProvider = ({ children }) => {
           return {
             ...chat,
             isEmpty: false,
+            lastUpdated: new Date().toISOString(),
             messages: [
               ...chat.messages.filter((msg) => !msg.isButton),
               { text, isUser: true, isFeedback },
-              {
-                text: "",
-                isUser: false,
-                isAssistantResponse: true,
-                streaming: true,
-              },
             ],
           };
         }
@@ -1087,77 +1078,130 @@ const ChatProvider = ({ children }) => {
       }),
     );
 
+    // === временное сообщение ассистента ===
+    const tempAssistant = {
+      text: "",
+      isUser: false,
+      isFeedback: false,
+      isAssistantResponse: true,
+      streaming: true,
+    };
+
+    setChats((prev) =>
+      prev.map((chat) => {
+        if (
+          String(chat.id) === String(currentChatId) ||
+          (chat.id === null && chat === prev[0])
+        ) {
+          return { ...chat, messages: [...chat.messages, tempAssistant] };
+        }
+        return chat;
+      }),
+    );
+
     try {
-      const body = {
-        query: text,
-        session_id: currentChatId,
-        user_id: userId,
-        language: mapLangForNewApi(locale),
-        streaming: true,
-      };
+      // === создаём мок вместо реального запроса ===
+      const useMock = false;
+      let reader;
+      let decoder = new TextDecoder("utf-8");
 
-      const response = await fetch(
-        `${
-          import.meta.env.VITE_API_URL_NEW || "http://172.16.17.4:8001"
-        }/api/chat`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        },
-      );
+      if (useMock) {
+        const mockStream = await import("../../streamMock.json").then(
+          (m) => m.default,
+        );
+        let index = 0;
+        reader = {
+          async read() {
+            if (index < mockStream.length) {
+              const line = "data: " + JSON.stringify(mockStream[index]) + "\n";
+              index++;
+              await new Promise((r) => setTimeout(r, 70));
+              return { done: false, value: new TextEncoder().encode(line) };
+            }
+            return { done: true };
+          },
+        };
+      } else {
+        const response = await fetch(
+          `${
+            import.meta.env.VITE_API_URL_NEW || "http://172.16.17.4:8001"
+          }/api/chat`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              query: text,
+              session_id: currentChatId || null,
+              user_id: userId,
+              language: mapLangForNewApi(locale),
+            }),
+          },
+        );
+        reader = response.body.getReader();
+      }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
+      // === читаем поток ===
+      let buffer = "";
       let accumulatedText = "";
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
+        buffer += decoder.decode(value, { stream: true });
 
-        for (const line of lines) {
-          const obj = JSON.parse(line.replace(/^data:\s*/, ""));
-          if (obj.type === "text") {
-            accumulatedText += obj.content;
+        const parts = buffer.split("\n");
+        buffer = parts.pop(); // оставляем неполный кусок
+
+        for (const line of parts) {
+          if (!line.startsWith("data:")) continue;
+          const json = line.slice(5).trim();
+          if (!json) continue;
+          const parsed = JSON.parse(json);
+
+          if (parsed.type === "text") {
+            accumulatedText += parsed.content;
             setChats((prev) =>
               prev.map((chat) => {
-                const msgIdx = chat.messages.findIndex((m) => m.streaming);
-                if (msgIdx === -1) return chat;
-                const copy = [...chat.messages];
-                copy[msgIdx] = { ...copy[msgIdx], text: accumulatedText };
-                return { ...chat, messages: copy };
-              }),
-            );
-          } else if (obj.type === "complete") {
-            setChats((prev) =>
-              prev.map((chat) => {
-                const msgIdx = chat.messages.findIndex((m) => m.streaming);
-                if (msgIdx === -1) return chat;
-                const copy = [...chat.messages];
-                copy[msgIdx] = {
-                  ...copy[msgIdx],
-                  text: accumulatedText || obj.response || "",
-                  streaming: false,
-                  sqlQuery: obj.sql_query || "",
-                  rawData: obj.raw_data || [],
-                  hasExcel: obj.has_excel || false,
-                  excelFile: obj.excel_file || null,
-                  showTable: obj.show_table || false,
-                  tableColumns: obj.table_columns || [],
+                const idx = chat.messages.findIndex((m) => m.streaming);
+                if (idx === -1) return chat;
+                const updated = {
+                  ...chat.messages[idx],
+                  text: accumulatedText,
+                  streaming: true,
                 };
+                const copy = [...chat.messages];
+                copy[idx] = updated;
                 return { ...chat, messages: copy };
               }),
             );
-          } else if (obj.type === "end") {
-            break;
+          } else if (parsed.type === "complete") {
+            // Финальный ответ с таблицей и Excel
+            setChats((prev) =>
+              prev.map((chat) => {
+                const idx = chat.messages.findIndex((m) => m.streaming);
+                if (idx === -1) return chat;
+                const updated = {
+                  ...chat.messages[idx],
+                  text: parsed.response,
+                  streaming: false,
+                  chart: null,
+                  hasExcel: parsed.has_excel || false,
+                  excelFile: parsed.excel_file || null,
+                  showTable: parsed.show_table || false,
+                  tableColumns: parsed.table_columns || [],
+                  rawData: parsed.raw_data || [],
+                };
+                const copy = [...chat.messages];
+                copy[idx] = updated;
+                return { ...chat, messages: copy };
+              }),
+            );
+          } else if (parsed.type === "end") {
+            setIsTyping(false);
           }
         }
       }
     } catch (err) {
-      console.error("Ошибка стриминга:", err);
-    } finally {
+      console.error("Ошибка при мок-стриминге:", err);
       setIsTyping(false);
     }
   }

@@ -32,7 +32,7 @@ export default function Message({
   hasExcel,
   showTable,
   tableColumns,
-  tableData,
+  rawData,
   isCustomMessage = false,
   isAssistantResponse = false,
 }) {
@@ -255,37 +255,35 @@ export default function Message({
         >
           {text}
         </ReactMarkdown>
-        {showTable && Array.isArray(tableData) && tableData.length > 0 && (
-          <div className="fade-in mt-4 overflow-x-auto max-w-full">
+        {/* ========== Таблица, если showTable = true ========== */}
+        {showTable && Array.isArray(rawData) && rawData.length > 0 && (
+          <div className="overflow-x-auto mt-3 fade-in">
             <table className="min-w-full border border-gray-300 text-sm text-left">
-              <thead className="bg-gray-100">
-                <tr>
-                  {tableColumns.map((col) => (
-                    <th
-                      key={col}
-                      className="border border-gray-300 px-3 py-2 font-medium text-gray-700"
-                    >
-                      {col}
-                    </th>
-                  ))}
+              <thead>
+                <tr className="bg-gray-100">
+                  {Array.isArray(tableColumns) &&
+                    tableColumns.map((col, idx) => (
+                      <th
+                        key={idx}
+                        className="border border-gray-300 px-2 py-1 font-medium"
+                      >
+                        {col}
+                      </th>
+                    ))}
                 </tr>
               </thead>
               <tbody>
-                {tableData.map((row, rowIndex) => (
-                  <tr
-                    key={rowIndex}
-                    className={rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                  >
-                    {tableColumns.map((col) => (
-                      <td
-                        key={col}
-                        className="border border-gray-300 px-3 py-2 text-gray-800"
-                      >
-                        {typeof row[col] === "number"
-                          ? row[col].toLocaleString("ru-RU")
-                          : row[col] ?? "-"}
-                      </td>
-                    ))}
+                {rawData.map((row, rIdx) => (
+                  <tr key={rIdx}>
+                    {Array.isArray(tableColumns) &&
+                      tableColumns.map((col, cIdx) => (
+                        <td
+                          key={cIdx}
+                          className="border border-gray-300 px-2 py-1"
+                        >
+                          {row[col] ?? "-"}
+                        </td>
+                      ))}
                   </tr>
                 ))}
               </tbody>

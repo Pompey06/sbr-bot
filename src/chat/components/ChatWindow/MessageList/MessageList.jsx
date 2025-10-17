@@ -103,6 +103,9 @@ export default function MessageList({ isSidebarOpen, toggleSidebar }) {
         chart={message.chart}
         excelFile={message.excelFile}
         hasExcel={message.hasExcel}
+        showTable={message.showTable || false}
+        tableColumns={message.tableColumns || []}
+        rawData={message.rawData || []}
       >
         {/* Текст для начальных категорий */}
         {index === 0 && showInitialButtons && (
