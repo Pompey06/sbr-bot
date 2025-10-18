@@ -1156,18 +1156,27 @@ const ChatProvider = ({ children }) => {
           const json = line.slice(5).trim();
           if (!json) continue;
           const parsed = JSON.parse(json);
-
           if (parsed.type === "text") {
-            accumulatedText += parsed.content;
+            const chunkText =
+              typeof parsed.content === "string"
+                ? parsed.content
+                : typeof parsed.content === "object"
+                ? Object.values(parsed.content).join(" ")
+                : String(parsed.content || "");
+
+            accumulatedText += chunkText;
+
             setChats((prev) =>
               prev.map((chat) => {
                 const idx = chat.messages.findIndex((m) => m.streaming);
                 if (idx === -1) return chat;
+
                 const updated = {
                   ...chat.messages[idx],
                   text: accumulatedText,
                   streaming: true,
                 };
+
                 const copy = [...chat.messages];
                 copy[idx] = updated;
                 return { ...chat, messages: copy };
@@ -1175,13 +1184,22 @@ const ChatProvider = ({ children }) => {
             );
           } else if (parsed.type === "complete") {
             // Финальный ответ с таблицей и Excel
+            // если внутри есть поле "response", берём именно его
+            const safeResponse =
+              typeof parsed.response === "object" && parsed.response?.response
+                ? parsed.response.response
+                : typeof parsed.response === "string"
+                ? parsed.response
+                : String(parsed.response || "");
+
             setChats((prev) =>
               prev.map((chat) => {
                 const idx = chat.messages.findIndex((m) => m.streaming);
                 if (idx === -1) return chat;
+
                 const updated = {
                   ...chat.messages[idx],
-                  text: parsed.response,
+                  text: safeResponse,
                   streaming: false,
                   chart: null,
                   hasExcel: parsed.has_excel || false,
@@ -1190,6 +1208,7 @@ const ChatProvider = ({ children }) => {
                   tableColumns: parsed.table_columns || [],
                   rawData: parsed.raw_data || [],
                 };
+
                 const copy = [...chat.messages];
                 copy[idx] = updated;
                 return { ...chat, messages: copy };
