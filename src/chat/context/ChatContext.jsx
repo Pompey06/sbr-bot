@@ -201,13 +201,26 @@ const ChatProvider = ({ children }) => {
         params: { limit },
       });
 
-      // ожидаем data.messages: [{ id, role: 'assistant'|'user', content, timestamp, user_id }]
       const baseMessages = (data?.messages || []).map((m) => ({
         text: m?.content ?? "",
         isUser: m?.role === "user",
         isFeedback: false,
         isButton: false,
         timestamp: m?.timestamp,
+        // Новое:
+        hasExcel: !!m?.has_excel,
+        excelFile: m?.has_excel
+          ? {
+              file_id: m?.excel_file_id,
+              filename: m?.excel_filename,
+            }
+          : null,
+        chart: m?.has_chart
+          ? {
+              chart_id: m?.chart_id,
+              chart_type: m?.chart_type,
+            }
+          : null,
       }));
 
       // UPDATED: гарантируем сохранение message_id для всех сообщений ассистента
