@@ -1202,11 +1202,20 @@ const ChatProvider = ({ children }) => {
                   text: safeResponse,
                   streaming: false,
                   chart: null,
-                  hasExcel: parsed.has_excel || false,
-                  excelFile: parsed.excel_file || null,
-                  showTable: parsed.show_table || false,
-                  tableColumns: parsed.table_columns || [],
-                  rawData: parsed.raw_data || [],
+                  excelFile:
+                    parsed.excel_file || parsed.response?.excel_file || null,
+                  hasExcel:
+                    parsed.has_excel ||
+                    parsed.response?.has_excel ||
+                    !!parsed.response?.excel_file ||
+                    false,
+                  showTable:
+                    parsed.show_table || parsed.response?.show_table || false,
+                  tableColumns:
+                    parsed.table_columns ||
+                    parsed.response?.table_columns ||
+                    [],
+                  rawData: parsed.raw_data || parsed.response?.raw_data || [],
                 };
 
                 const copy = [...chat.messages];

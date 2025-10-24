@@ -50,7 +50,18 @@
 .sidebar__buttons,
 .sidebar__warning {
   opacity: 1;
+
   transition: opacity 0.3s ease-in-out;
+}
+
+.sidebar__warning {
+  font-size: 14px;
+}
+
+@media (max-width: 700px) {
+  .sidebar__warning {
+    font-size: 12px;
+  }
 }
 
 .logo__text {
