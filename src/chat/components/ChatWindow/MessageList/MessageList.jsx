@@ -79,7 +79,6 @@ export default function MessageList({ isSidebarOpen, toggleSidebar }) {
       botCount++;
       feedbackIndex = botCount * 2 - 1;
     }
-    console.log("🧩 message.chart:", message.chart);
 
     return (
       <Message

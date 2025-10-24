@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import copy from "copy-to-clipboard";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
@@ -45,6 +45,9 @@ export default function Message({
   const { downloadForm, chats, currentChatId } = useContext(ChatContext);
   const [fileBlobMap, setFileBlobMap] = useState({});
   const [downloadingId, setDownloadingId] = useState(null);
+  const [forceRender, setForceRender] = useState(false);
+  const [chartReady, setChartReady] = useState(false);
+  const chartRef = useRef(null);
 
   // 1) Добавили состояние для управления «скрытием» тултипа кнопки «Копировать»
   const [hideCopyTooltip, setHideCopyTooltip] = useState(true);
@@ -55,31 +58,54 @@ export default function Message({
     if (chart?.success) console.log("📈 chart_html:", chart.chart_html);
   }, [chart]);
 
-  // UPDATED: подключаем Plotly.js если его нет и выполняем <script> после вставки chart_html
+  // === Загрузка графика по chart_id, если в сообщении есть hasChart, но нет chart_html ===
   useEffect(() => {
-    if (!chart?.success || !chart.chart_html) return;
+    const fetchChart = async () => {
+      try {
+        if (!chart || chart.success || !chart.chart_id) return;
+        const response = await api.get(`/api/charts/${chart.chart_id}`);
+        if (response.data?.success && response.data.chart_html) {
+          // Подставляем график в message.chart
+          chart.success = true;
+          chart.chart_html = response.data.chart_html;
+          // Принудительно обновляем состояние, чтобы компонент перерендерился
+          setForceRender((prev) => !prev);
+        }
+      } catch (error) {
+        console.error("Ошибка при загрузке чарта:", error);
+      }
+    };
 
-    // Проверяем наличие Plotly в окне
-    if (!window.Plotly) {
-      const script = document.createElement("script");
-      script.src = "https://cdn.plot.ly/plotly-latest.min.js";
-      script.onload = runInlineScripts;
-      document.body.appendChild(script);
-    } else {
-      runInlineScripts();
-    }
+    fetchChart();
+  }, [chart]);
 
-    function runInlineScripts() {
-      const container = document.querySelector(".chart-container");
-      if (!container) return;
-      const scripts = container.querySelectorAll("script");
+  useEffect(() => {
+    if (!chart?.success || !chart.chart_html || !chartRef.current) return;
+
+    // Очищаем контейнер перед вставкой
+    chartRef.current.innerHTML = chart.chart_html;
+
+    const runInlineScripts = (ctx) => {
+      const scripts = ctx.querySelectorAll("script");
       scripts.forEach((oldScript) => {
         const newScript = document.createElement("script");
         if (oldScript.src) newScript.src = oldScript.src;
         else newScript.textContent = oldScript.textContent;
         oldScript.parentNode.replaceChild(newScript, oldScript);
       });
+    };
+
+    // Если Plotly ещё не загружен — загружаем и потом выполняем скрипты
+    if (!window.Plotly) {
+      const script = document.createElement("script");
+      script.src = "https://cdn.plot.ly/plotly-3.1.0.min.js";
+      script.onload = () => runInlineScripts(chartRef.current);
+      document.body.appendChild(script);
+    } else {
+      runInlineScripts(chartRef.current);
     }
+
+    setChartReady(true);
   }, [chart]);
 
   const allFilePaths = React.useMemo(() => {
@@ -444,17 +470,15 @@ export default function Message({
         )}
         {chart?.success && chart.chart_html && (
           <div
+            ref={chartRef}
             className="chart-container fade-in mt-4"
-            dangerouslySetInnerHTML={{
-              __html: chart.chart_html
-                .replace(/<\/?html[^>]*>/g, "")
-                .replace(/<\/?body[^>]*>/g, "")
-                .replace(
-                  /<div([^>]*)>/,
-                  '<div$1 style="max-width:100%;overflow-x:auto;">',
-                ),
-            }}
-          />
+            data-id={chart.chart_id}
+            style={{ minHeight: 400 }}
+          >
+            {!chartReady && (
+              <div className="text-gray-400 text-sm">Загрузка графика...</div>
+            )}
+          </div>
         )}
 
         {/* ========== Кнопка «Копировать» ========== */}

@@ -207,7 +207,6 @@ const ChatProvider = ({ children }) => {
         isFeedback: false,
         isButton: false,
         timestamp: m?.timestamp,
-        // Новое:
         hasExcel: !!m?.has_excel,
         excelFile: m?.has_excel
           ? {
@@ -215,6 +214,7 @@ const ChatProvider = ({ children }) => {
               filename: m?.excel_filename,
             }
           : null,
+        hasChart: !!m?.has_chart,
         chart: m?.has_chart
           ? {
               chart_id: m?.chart_id,
