@@ -786,6 +786,16 @@ const ChatProvider = ({ children }) => {
             copy[ci] = updated;
             return copy;
           });
+
+          // UPDATED: сразу обновляем имя сессии на сервере
+          try {
+            await apiNew.put(`/api/sessions/${sessionId}/name`, {
+              session_name: sessionName,
+            });
+            console.log("📝 session name updated:", sessionName);
+          } catch (err) {
+            console.error("Ошибка при обновлении имени сессии:", err);
+          }
         }
       }
 
@@ -1135,6 +1145,46 @@ const ChatProvider = ({ children }) => {
           },
         };
       } else {
+        // UPDATED: гарантируем session_id перед запросом в /api/chat
+        let sessionId = currentChatId;
+        if (!sessionId) {
+          const sessionName = (text || "New chat").slice(0, 50);
+
+          // создаём сессию
+          sessionId = await createBackendSession({ sessionName });
+
+          if (sessionId) {
+            // локально прокидываем новый id и временный title
+            setCurrentChatId(sessionId);
+            setChats((prev) => {
+              const ci = prev.findIndex((c) =>
+                c.messages.some((m) => m.streaming),
+              );
+              if (ci === -1) return prev;
+              const updated = {
+                ...prev[ci],
+                id: sessionId,
+                title: prev[ci].title ?? sessionName,
+                isEmpty: false,
+              };
+              const copy = [...prev];
+              copy[ci] = updated;
+              return copy;
+            });
+
+            // сразу дергаем PUT /api/sessions/{session_id}/name
+            try {
+              await apiNew.put(`/api/sessions/${sessionId}/name`, {
+                session_name: sessionName,
+              });
+              console.log("📝 session name updated:", sessionName); // UPDATED
+            } catch (err) {
+              console.error("Ошибка при обновлении имени сессии:", err); // UPDATED
+            }
+          }
+        }
+
+        // основной запрос в /api/chat (стрим)
         const response = await fetch(
           `${
             import.meta.env.VITE_API_URL_NEW || "http://172.16.17.4:8001"
@@ -1144,7 +1194,7 @@ const ChatProvider = ({ children }) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               query: text,
-              session_id: currentChatId || null,
+              session_id: sessionId || null,
               user_id: userId,
               language: mapLangForNewApi(locale),
             }),
