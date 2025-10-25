@@ -114,5 +114,8 @@
     "question1": "How to submit a statistical report?",
     "question2": "What are the deadlines for forms?",
     "question3": "Where to find filling instructions?"
+  },
+  "chart": {
+    "loading": "Loading chart..."
   }
 }

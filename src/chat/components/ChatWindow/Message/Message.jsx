@@ -522,7 +522,7 @@ export default function Message({
             style={{ minHeight: 400 }}
           >
             {!chartReady && (
-              <div className="text-gray-400 text-sm">Загрузка графика...</div>
+              <div className="text-gray-400 text-sm">{t("chart.loading")}</div>
             )}
           </div>
         )}
