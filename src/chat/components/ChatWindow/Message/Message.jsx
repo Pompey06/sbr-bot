@@ -58,55 +58,101 @@ export default function Message({
     if (chart?.success) console.log("📈 chart_html:", chart.chart_html);
   }, [chart]);
 
-  // === Загрузка графика по chart_id, если в сообщении есть hasChart, но нет chart_html ===
   useEffect(() => {
-    const fetchChart = async () => {
+    const plotDiv = chartRef.current;
+    if (!chart || !plotDiv) return;
+
+    const renderPlot = (raw) => {
+      if (!window.Plotly || !raw || !Array.isArray(raw) || raw.length === 0)
+        return;
+
+      const x = raw.map((d) => d.year || d.x || "");
+      const y = raw.map((d) => d.total_ip || d.y || 0);
+
+      const trace = {
+        x,
+        y,
+        type: "scatter",
+        mode: "lines+markers+text",
+        text: y.map(String),
+        textposition: "top center",
+        line: { shape: "spline" },
+      };
+
+      const layout = {
+        margin: { t: 40, l: 40, r: 20, b: 40 },
+        height: 400,
+        paper_bgcolor: "transparent",
+        plot_bgcolor: "transparent",
+        font: { size: 12 },
+      };
+
       try {
-        if (!chart || chart.success || !chart.chart_id) return;
-        const response = await api.get(`/api/charts/${chart.chart_id}`);
-        if (response.data?.success && response.data.chart_html) {
-          // Подставляем график в message.chart
-          chart.success = true;
-          chart.chart_html = response.data.chart_html;
-          // Принудительно обновляем состояние, чтобы компонент перерендерился
-          setForceRender((prev) => !prev);
-        }
-      } catch (error) {
-        console.error("Ошибка при загрузке чарта:", error);
+        window.Plotly.newPlot(plotDiv, [trace], layout, {
+          displayModeBar: false,
+        });
+        setChartReady(true);
+      } catch (e) {
+        console.error("Ошибка при построении графика:", e);
       }
     };
 
-    fetchChart();
-  }, [chart]);
+    const loadAndRender = async () => {
+      try {
+        // 1. Если график уже готов (стрим или raw_data)
+        if (chart.success && rawData?.length) {
+          if (!window.Plotly) {
+            const s = document.createElement("script");
+            s.src = "https://cdn.plot.ly/plotly-3.1.0.min.js";
+            s.onload = () => renderPlot(rawData);
+            document.body.appendChild(s);
+          } else {
+            renderPlot(rawData);
+          }
+          return;
+        }
 
-  useEffect(() => {
-    if (!chart?.success || !chart.chart_html || !chartRef.current) return;
+        // 2. Если график есть в истории, нужно загрузить по chart_id
+        if (chart.chart_id && !chart.success) {
+          const response = await api.get(`/api/charts/${chart.chart_id}`);
+          const html = response.data?.chart_html;
+          if (!response.data?.success || !html) return;
 
-    // Очищаем контейнер перед вставкой
-    chartRef.current.innerHTML = chart.chart_html;
-
-    const runInlineScripts = (ctx) => {
-      const scripts = ctx.querySelectorAll("script");
-      scripts.forEach((oldScript) => {
-        const newScript = document.createElement("script");
-        if (oldScript.src) newScript.src = oldScript.src;
-        else newScript.textContent = oldScript.textContent;
-        oldScript.parentNode.replaceChild(newScript, oldScript);
-      });
+          // попытка безопасно извлечь вызов Plotly.newPlot
+          const plotMatch = html.match(/Plotly\.newPlot\(([\s\S]*?)\);/);
+          if (plotMatch) {
+            const argsCode = plotMatch[1];
+            const runPlot = () => {
+              try {
+                // eslint-disable-next-line no-new-func
+                const fn = new Function(`return Plotly.newPlot(${argsCode});`);
+                fn();
+                setChartReady(true);
+              } catch (err) {
+                console.error("Ошибка выполнения Plotly.newPlot:", err);
+              }
+            };
+            if (!window.Plotly) {
+              const s = document.createElement("script");
+              s.src = "https://cdn.plot.ly/plotly-3.1.0.min.js";
+              s.onload = runPlot;
+              document.body.appendChild(s);
+            } else {
+              runPlot();
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Ошибка загрузки чарта:", error);
+      }
     };
 
-    // Если Plotly ещё не загружен — загружаем и потом выполняем скрипты
-    if (!window.Plotly) {
-      const script = document.createElement("script");
-      script.src = "https://cdn.plot.ly/plotly-3.1.0.min.js";
-      script.onload = () => runInlineScripts(chartRef.current);
-      document.body.appendChild(script);
-    } else {
-      runInlineScripts(chartRef.current);
-    }
+    loadAndRender();
 
-    setChartReady(true);
-  }, [chart]);
+    return () => {
+      if (window.Plotly && plotDiv) window.Plotly.purge(plotDiv);
+    };
+  }, [chart, rawData]);
 
   const allFilePaths = React.useMemo(() => {
     if (filePaths && Array.isArray(filePaths)) {
@@ -468,7 +514,7 @@ export default function Message({
             })()}
           </div>
         )}
-        {chart?.success && chart.chart_html && (
+        {(chart?.chart_id || (chart?.success && rawData?.length > 0)) && (
           <div
             ref={chartRef}
             className="chart-container fade-in mt-4"

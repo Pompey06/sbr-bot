@@ -1264,7 +1264,7 @@ const ChatProvider = ({ children }) => {
                   ...chat.messages[idx],
                   text: safeResponse,
                   streaming: false,
-                  chart: null,
+                  chart: parsed.chart || parsed.response?.chart || null,
                   excelFile:
                     parsed.excel_file || parsed.response?.excel_file || null,
                   hasExcel:
