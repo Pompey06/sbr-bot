@@ -2,6 +2,8 @@ import axios from "axios";
 import React, { createContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import chatI18n from "../i18n";
+import faqsData from "../assets/faqs.json";
+
 import {
   getFilePathByBotIndex,
   getFilePaths,
@@ -799,12 +801,26 @@ const ChatProvider = ({ children }) => {
         }
       }
 
-      // 4️⃣ Обычный запрос на API
+      const findFaqIdByText = (text) => {
+        if (!faqsData?.faqs) return null;
+        const normalized = text.toLowerCase().trim();
+        for (const f of faqsData.faqs) {
+          const qru = f.questions?.ru?.toLowerCase?.() || "";
+          const qkk = f.questions?.kk?.toLowerCase?.() || "";
+          const qen = f.questions?.en?.toLowerCase?.() || "";
+          if (normalized === qru || normalized === qkk || normalized === qen) {
+            return f.faq_id;
+          }
+        }
+        return null;
+      };
+
       const body = {
         query: text,
         session_id: sessionId || null,
         user_id: userId,
         language: mapLangForNewApi(locale),
+        faq_id: findFaqIdByText(text) || null, // ✅ добавлен faq_id
       };
 
       const { data } = await apiNew.post("/api/chat", body, {
@@ -1184,6 +1200,24 @@ const ChatProvider = ({ children }) => {
           }
         }
 
+        const findFaqIdByText = (text) => {
+          if (!faqsData?.faqs) return null;
+          const normalized = text.toLowerCase().trim();
+          for (const f of faqsData.faqs) {
+            const qru = f.questions?.ru?.toLowerCase?.() || "";
+            const qkk = f.questions?.kk?.toLowerCase?.() || "";
+            const qen = f.questions?.en?.toLowerCase?.() || "";
+            if (
+              normalized === qru ||
+              normalized === qkk ||
+              normalized === qen
+            ) {
+              return f.faq_id;
+            }
+          }
+          return null;
+        };
+
         // основной запрос в /api/chat (стрим)
         const response = await fetch(
           `${
@@ -1197,6 +1231,7 @@ const ChatProvider = ({ children }) => {
               session_id: sessionId || null,
               user_id: userId,
               language: mapLangForNewApi(locale),
+              faq_id: findFaqIdByText(text) || null,
             }),
           },
         );
