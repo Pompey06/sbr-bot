@@ -12,6 +12,10 @@
   display: none;
 }
 
+.annotation {
+  font-size: 11px;
+}
+
 .language {
   border: 1px solid #0068bf;
   border-radius: 5px;
