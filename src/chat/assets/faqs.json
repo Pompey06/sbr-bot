@@ -1,10 +1,8 @@
-
-
 {
   "name": {
-    "kk": "ИС СБР дерекқорына арналған үлгі сұрақтар",
-    "ru": "Примерные вопросы по базе данных ИС СБР",
-    "en": "Sample questions for IS SBR database"
+    "kk": "АЖ СБР деректер базасы бойынша жиі қойылатын сұрақтар",
+    "ru": "Часто задаваемые вопросы по базе данных ИС СБР",
+    "en": "Frequently Asked Questions about the IS SBR Database"
   },
   "faqs": [
     {
@@ -53,7 +51,6 @@
         "kk": "Тіркелген жеке кәсіпкерлер саны (жеке кәсіпкерлік түрінде) қанша?",
         "ru": "Какое количество зарегистрированных индивидуальных предпринимателей в виде личного предпринимательства?",
         "en": "What is the number of registered individual entrepreneurs (as sole proprietorships)?"
-                
       }
     },
     {
@@ -61,7 +58,7 @@
       "questions": {
         "kk": "Белсенді жеке кәсіпкерлер саны (жеке кәсіпкерлік түрінде) қанша?",
         "ru": "Сколько действующих индивидуальных предпринимателей в виде личного предпринимательства?",
-        "en": "What is the number of active individual entrepreneurs (as sole proprietorships)?"      
+        "en": "What is the number of active individual entrepreneurs (as sole proprietorships)?"
       }
     },
     {
@@ -69,7 +66,7 @@
       "questions": {
         "kk": "Қазақстан өңірлері бойынша тіркелген жеке кәсіпкерлер саны қанша?",
         "ru": "Какое количество зарегистрированных индивидуальных предпринимателей в виде личного предпринимательства по регионам?",
-        "en": "What is the number of registered individual entrepreneurs by region?"       
+        "en": "What is the number of registered individual entrepreneurs by region?"
       }
     },
     {
@@ -77,7 +74,7 @@
       "questions": {
         "kk": "Қазақстан өңірлері бойынша белсенді жеке кәсіпкерлер саны қанша?",
         "ru": "Какое количество действующих индивидуальных предпринимателей в виде личного предпринимательства по регионам?",
-        "en": "What is the number of active individual entrepreneurs by region?"       
+        "en": "What is the number of active individual entrepreneurs by region?"
       }
     },
     {
@@ -85,7 +82,7 @@
       "questions": {
         "kk": "Жеке кәсіпкерлер саны тіркеу бойынша өлшеміне қарай қанша?",
         "ru": "Какое количество зарегистрированных индивидуальных предпринимателей в виде личного предпринимательства по размерности?",
-        "en": "What is the number of registered individual entrepreneurs by size?"        
+        "en": "What is the number of registered individual entrepreneurs by size?"
       }
     },
     {
@@ -93,7 +90,7 @@
       "questions": {
         "kk": "Тіркелген шетелдік заңды тұлғалардың филиалдарының саны қанша?",
         "ru": "Какое количество зарегистрированных филиалов иностранных юридических лиц?",
-        "en": "What is the number of registered branches of foreign legal entities?"       
+        "en": "What is the number of registered branches of foreign legal entities?"
       }
     },
     {
@@ -101,7 +98,7 @@
       "questions": {
         "kk": "Қазақстан өңірлері бойынша шағын және орта кәсіпкерлік субъектілерінің саны қанша?",
         "ru": "Сколько субъектов малого и среднего предпринимательства по регионам Республики Казахстан?",
-        "en": "How many small and medium-sized enterprises by regions of Kazakhstan?"        
+        "en": "How many small and medium-sized enterprises by regions of Kazakhstan?"
       }
     },
     {
@@ -109,7 +106,7 @@
       "questions": {
         "kk": "Тіркелген жеке кәсіпкерлердің қызмет түрлері бойынша саны қанша?",
         "ru": "Какое количество зарегистрированных субъектов индивидуального предпринимательства по видам деятельности?",
-        "en": "What is the number of registered individual entrepreneurs by activity?"       
+        "en": "What is the number of registered individual entrepreneurs by activity?"
       }
     },
     {
@@ -117,7 +114,7 @@
       "questions": {
         "kk": "Мемлекеттік меншік формасындағы тіркелген заңды тұлғалардың қызмет түрлері бойынша саны қанша?",
         "ru": "Какое количество зарегистрированных юридических лиц с государственной формой собственности и по видам деятельности?",
-        "en": "What is the number of registered legal entities with government ownership by activity?"       
+        "en": "What is the number of registered legal entities with government ownership by activity?"
       }
     },
     {
@@ -125,7 +122,7 @@
       "questions": {
         "kk": "Мемлекеттік меншік формасындағы тіркелген заңды тұлғалардың саны қанша?",
         "ru": "Какое количество зарегистрированных юридических лиц с государственной формой собственности?",
-        "en": "What is the number of registered legal entities with government ownership?"   
+        "en": "What is the number of registered legal entities with government ownership?"
       }
     },
     {
@@ -133,7 +130,7 @@
       "questions": {
         "kk": "Тіркелген заңды тұлғалардың қызмет түрлері бойынша саны қанша?",
         "ru": "Какое количество зарегистрированных юридических лиц по видам деятельности?",
-        "en": "What is the number of registered legal entities by activity?"        
+        "en": "What is the number of registered legal entities by activity?"
       }
     },
     {
@@ -141,7 +138,7 @@
       "questions": {
         "kk": "Тіркелген заңды тұлғалардың көлемі бойынша саны қанша?",
         "ru": "Какое количество зарегистрированных юридических лиц по размерности?",
-        "en": "What is the number of registered legal entities by size?"       
+        "en": "What is the number of registered legal entities by size?"
       }
     },
     {
@@ -149,7 +146,7 @@
       "questions": {
         "kk": "Тіркелген заңды тұлғалардың ұйымдастырушылық-құқықтық формалары бойынша саны қанша?",
         "ru": "Какое количество зарегистрированных юридических лиц по организационно-правовым формам?",
-        "en": "What is the number of registered legal entities by organizational-legal forms?"         
+        "en": "What is the number of registered legal entities by organizational-legal forms?"
       }
     },
     {
@@ -157,7 +154,7 @@
       "questions": {
         "kk": "Тіркелген заңды тұлғалардың меншік формалары бойынша саны қанша?",
         "ru": "Какое количество зарегистрированных юридических лиц по формам собственности?",
-        "en": "What is the number of registered legal entities by forms of ownership?"        
+        "en": "What is the number of registered legal entities by forms of ownership?"
       }
     },
     {
@@ -165,7 +162,7 @@
       "questions": {
         "kk": "Тіркелген заңды тұлғалардың экономика секторлары бойынша саны қанша?",
         "ru": "Какое количество зарегистрированных юридических лиц по секторам экономики?",
-        "en": "What is the number of registered legal entities by economic sectors?"       
+        "en": "What is the number of registered legal entities by economic sectors?"
       }
     },
     {
@@ -173,7 +170,7 @@
       "questions": {
         "kk": "Қазақстан өңірлері бойынша тіркелген заңды тұлғалардың саны қанша?",
         "ru": "Какое количество зарегистрированных юридических лиц по регионам Республики Казахстан?",
-        "en": "What is the number of registered legal entities by regions of Kazakhstan?"       
+        "en": "What is the number of registered legal entities by regions of Kazakhstan?"
       }
     },
     {
@@ -181,7 +178,7 @@
       "questions": {
         "kk": "Қазақстан өңірлері бойынша заңды тұлғалардың саны және белсенділігі қанша?",
         "ru": "Какое количество юридических лиц по регионам Республики Казахстан и активности?",
-        "en": "What is the number of legal entities by regions of Kazakhstan and their activity?"        
+        "en": "What is the number of legal entities by regions of Kazakhstan and their activity?"
       }
     },
     {
@@ -189,7 +186,7 @@
       "questions": {
         "kk": "Қазақстан өңірлері және ұйымдастырушылық-құқықтық формалар бойынша тіркелген заңды тұлғалардың саны қанша?",
         "ru": "Какое количество зарегистрированных юридических лиц по регионам Республики Казахстан и организационно-правовым формам?",
-        "en": "What is the number of registered legal entities by regions of Kazakhstan and organizational-legal forms?"      
+        "en": "What is the number of registered legal entities by regions of Kazakhstan and organizational-legal forms?"
       }
     },
     {
@@ -197,7 +194,7 @@
       "questions": {
         "kk": "Қызмет түрлері және бірінші басшысы әйел болған тіркелген заңды тұлғалардың саны қанша?",
         "ru": "Какое количество зарегистрированных юридических лиц по видам деятельности и гендерному отношению (первый руководитель женщина)?",
-        "en": "What is the number of registered legal entities by activity and gender relation (female first leader)?"        
+        "en": "What is the number of registered legal entities by activity and gender relation (female first leader)?"
       }
     },
     {
@@ -205,7 +202,7 @@
       "questions": {
         "kk": "Қазақстан өңірлері бойынша бірінші басшысы әйел болып тіркелген заңды тұлғалардың саны қанша?",
         "ru": "Какое количество зарегистрированных юридических лиц по регионам Республики Казахстан и гендерному отношению (первый руководитель женщина)?",
-        "en": "What is the number of registered legal entities by regions of Kazakhstan with female first leader?"       
+        "en": "What is the number of registered legal entities by regions of Kazakhstan with female first leader?"
       }
     },
     {
@@ -213,7 +210,7 @@
       "questions": {
         "kk": "Қазақстан өңірлері және меншік формалары бойынша тіркелген заңды тұлғалардың саны қанша?",
         "ru": "Какое количество зарегистрированных юридических лиц по регионам Республики Казахстан и формам собственности?",
-        "en": "What is the number of registered legal entities by regions of Kazakhstan and ownership forms?"        
+        "en": "What is the number of registered legal entities by regions of Kazakhstan and ownership forms?"
       }
     },
     {
@@ -221,7 +218,7 @@
       "questions": {
         "kk": "Қызмет түрлері және белсенділік белгілері бойынша тіркелген филиалдар мен шетелдік заңды тұлғалардың филиалдарының саны қанша?",
         "ru": "Какое количество зарегистрированных филиалов и филиалов иностранных юридических лиц по видам деятельности и признаку активности?",
-        "en": "What is the number of registered branches and branches of foreign legal entities by activity and activity status?"        
+        "en": "What is the number of registered branches and branches of foreign legal entities by activity and activity status?"
       }
     },
     {
@@ -229,7 +226,7 @@
       "questions": {
         "kk": "Қазақстан өңірлері және қызмет түрлері бойынша тіркелген филиалдар мен шетелдік заңды тұлғалардың филиалдарының саны қанша?",
         "ru": "Какое количество зарегистрированных филиалов и филиалов иностранных юридических лиц по регионам Республики Казахстан и видам деятельности?",
-        "en": "What is the number of registered branches and branches of foreign legal entities by regions of Kazakhstan and activities?"        
+        "en": "What is the number of registered branches and branches of foreign legal entities by regions of Kazakhstan and activities?"
       }
     },
     {
@@ -237,7 +234,7 @@
       "questions": {
         "kk": "Қазақстан өңірлері және меншік формалары бойынша тіркелген филиалдар мен шетелдік заңды тұлғалардың филиалдарының саны қанша?",
         "ru": "Какое количество зарегистрированных филиалов и филиалов иностранных юридических лиц по регионам Республики Казахстан и формам собственности?",
-        "en": "What is the number of registered branches and branches of foreign legal entities by regions of Kazakhstan and forms of ownership?"        
+        "en": "What is the number of registered branches and branches of foreign legal entities by regions of Kazakhstan and forms of ownership?"
       }
     },
     {
@@ -245,7 +242,7 @@
       "questions": {
         "kk": "Қазақстан өңірлері және көлемі бойынша тіркелген филиалдар мен шетелдік заңды тұлғалардың филиалдарының саны қанша?",
         "ru": "Какое количество зарегистрированных филиалов и филиалов иностранных юридических лиц по регионам Республики Казахстан и по размерности?",
-        "en": "What is the number of registered branches and branches of foreign legal entities by regions of Kazakhstan and size?"        
+        "en": "What is the number of registered branches and branches of foreign legal entities by regions of Kazakhstan and size?"
       }
     },
     {
@@ -253,7 +250,7 @@
       "questions": {
         "kk": "Шетелдік меншік формасы бойынша тіркелген және белсенді заңды тұлғалар, филиалдар және шетелдік заңды тұлғалардың филиалдарының саны қандай елдер бойынша?",
         "ru": "Сколько зарегистрированных и действующих юридических лиц, филиалов и филиалов иностранных юридических лиц с иностранной формой собственности в разрезе стран?",
-        "en": "How many registered and active legal entities, branches, and branches of foreign legal entities with foreign ownership form by countries?"        
+        "en": "How many registered and active legal entities, branches, and branches of foreign legal entities with foreign ownership form by countries?"
       }
     },
     {
@@ -261,9 +258,24 @@
       "questions": {
         "kk": "Ортақ меншік формасы бойынша тіркелген және белсенді заңды тұлғалар, филиалдар және шетелдік заңды тұлғалардың филиалдарының саны қандай елдер бойынша?",
         "ru": "Сколько зарегистрированных и действующих юридических лиц, филиалов и филиалов иностранных юридических лиц с совместной формой собственности в разрезе стран?",
-        "en": "How many registered and active legal entities, branches, and branches of foreign legal entities with joint ownership form by countries?"        
+        "en": "How many registered and active legal entities, branches, and branches of foreign legal entities with joint ownership form by countries?"
+      }
+    },
+    {
+      "faq_id": "secondary_oked_region",
+      "questions": {
+        "kk": "Өңірлер бөлінісінде астықты сақтау және қоймалау бойынша қосалқы ЭҚЖЖ бар заңды тұлғалардың, филиалдардың және шетелдік заңды тұлғалар филиалдарының саны.",
+        "ru": "Количество юридических лиц, филиалов и филиалов иностранных юридических лиц со вторичным ОКЭД Складирование и хранение зерна в разрезе регионов.",
+        "en": "The number of legal entities, branches, and branches of foreign legal entities with the secondary NACE code Grain storage and warehousing"
+      }
+    },
+    {
+      "faq_id": "secondary_oked_region_gov",
+      "questions": {
+        "kk": "Мемлекеттік меншік нысанындағы астықты сақтау және қоймалау бойынша қосалқы ЭҚЖЖ бар заңды тұлғалардың, филиалдардың және шетелдік заңды тұлғалар филиалдарының саны.",
+        "ru": "Количество юридических лиц, филиалов и филиалов иностранных юридических лиц со вторичным ОКЭД Складирование и хранение зерна с государственной формой собственности",
+        "en": "The number of legal entities, branches, and branches of foreign legal entities with the secondary NACE code “Grain storage and warehousing” under state ownership."
       }
     }
   ]
 }
-
