@@ -158,7 +158,10 @@ const ChatProvider = ({ children }) => {
   }, [i18n.language, t]);
 
   useEffect(() => {
-    const currentLanguage = i18n.language === "қаз" ? "kz" : "ru";
+    let currentLanguage = "ru";
+    if (i18n.language === "қаз") currentLanguage = "kz";
+    else if (i18n.language === "рус") currentLanguage = "ru";
+    else if (i18n.language === "eng") currentLanguage = "en";
     setLocale(currentLanguage);
   }, [i18n.language]);
 
@@ -194,7 +197,18 @@ const ChatProvider = ({ children }) => {
     updateFavicon(lang);
   };
 
-  const mapLangForNewApi = (loc) => (loc === "kz" ? "kk" : "ru");
+  const mapLangForNewApi = (loc) => {
+    switch (loc) {
+      case "kz":
+        return "kk";
+      case "ru":
+        return "ru";
+      case "en":
+        return "en";
+      default:
+        return "ru"; // fallback
+    }
+  };
 
   const fetchChatHistory = async (sessionId, limit = 50) => {
     try {
