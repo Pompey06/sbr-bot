@@ -223,6 +223,8 @@ const ChatProvider = ({ children }) => {
         isFeedback: false,
         isButton: false,
         timestamp: m?.timestamp,
+
+        // Excel — как в онлайн-ответе
         hasExcel: !!m?.has_excel,
         excelFile: m?.has_excel
           ? {
@@ -230,13 +232,22 @@ const ChatProvider = ({ children }) => {
               filename: m?.excel_filename,
             }
           : null,
+
+        // Chart — передаём chart_id и явный success:false,
+        // чтобы Message.jsx пошёл по ветке загрузки /api/charts/{chart_id}
         hasChart: !!m?.has_chart,
         chart: m?.has_chart
           ? {
               chart_id: m?.chart_id,
               chart_type: m?.chart_type,
+              success: false, // UPDATED: явно помечаем как "исторический" график без rawData
             }
           : null,
+
+        // Таблица / данные — структура та же, что и у поточного ответа
+        showTable: !!m?.show_table,
+        tableColumns: Array.isArray(m?.table_columns) ? m.table_columns : [],
+        rawData: Array.isArray(m?.raw_data) ? m.raw_data : [],
       }));
 
       // UPDATED: гарантируем сохранение message_id для всех сообщений ассистента
@@ -307,10 +318,35 @@ const ChatProvider = ({ children }) => {
         });
       }
 
+      const withCharts = await Promise.all(
+        normalized.map(async (msg) => {
+          if (msg.hasChart && msg.chart?.chart_id && !msg.chart?.success) {
+            try {
+              const chartRes = await apiNew.get(
+                `/api/charts/${msg.chart.chart_id}`,
+              );
+              const chartData = chartRes.data;
+              return {
+                ...msg,
+                chart: {
+                  ...msg.chart,
+                  ...chartData,
+                  success: true,
+                },
+              };
+            } catch (e) {
+              console.error("Ошибка загрузки графика:", e);
+              return msg;
+            }
+          }
+          return msg;
+        }),
+      );
+
       return {
         session_id: sessionId,
-        messages: normalized,
-        message_count: data?.message_count ?? normalized.length,
+        messages: withCharts,
+        message_count: data?.message_count ?? withCharts.length,
       };
     } catch (error) {
       console.error("Error fetching chat history:", error);

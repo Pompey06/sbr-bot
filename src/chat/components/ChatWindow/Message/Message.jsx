@@ -59,16 +59,38 @@ export default function Message({
   }, [chart]);
 
   useEffect(() => {
-    const plotDiv = chartRef.current;
-    if (!chart || !plotDiv) return;
+    if (!chart) return;
 
-    const renderPlot = (raw) => {
-      if (!window.Plotly || !raw || !Array.isArray(raw) || raw.length === 0)
-        return;
+    const root = chartRef.current;
+    if (!root) return;
 
-      const x = raw.map((d) => d.year || d.x || "");
-      const y = raw.map((d) => d.total_ip || d.y || 0);
+    setChartReady(false);
 
+    // очищаем только вложенный div, React-контейнер не трогаем
+    let plotContainer = root.querySelector(".plot-root");
+    if (!plotContainer) {
+      plotContainer = document.createElement("div");
+      plotContainer.className = "plot-root";
+      root.appendChild(plotContainer);
+    }
+    plotContainer.replaceChildren(); // безопасное очищение
+
+    const ensurePlotlyLoaded = () =>
+      new Promise((resolve) => {
+        if (window.Plotly) return resolve();
+        const script = document.createElement("script");
+        script.src = "https://cdn.plot.ly/plotly-3.1.0.min.js";
+        script.async = false;
+        script.onload = resolve;
+        script.onerror = resolve;
+        document.body.appendChild(script);
+      });
+
+    const renderFromRawData = async () => {
+      if (!rawData?.length) return;
+      await ensurePlotlyLoaded();
+      const x = rawData.map((d) => d.year || d.x || "");
+      const y = rawData.map((d) => d.total_ip || d.y || 0);
       const trace = {
         x,
         y,
@@ -76,19 +98,15 @@ export default function Message({
         mode: "lines+markers+text",
         text: y.map(String),
         textposition: "top center",
-        line: { shape: "spline" },
       };
-
       const layout = {
         margin: { t: 40, l: 40, r: 20, b: 40 },
         height: 400,
         paper_bgcolor: "transparent",
         plot_bgcolor: "transparent",
-        font: { size: 12 },
       };
-
       try {
-        window.Plotly.newPlot(plotDiv, [trace], layout, {
+        window.Plotly.newPlot(plotContainer, [trace], layout, {
           displayModeBar: false,
         });
         setChartReady(true);
@@ -97,118 +115,63 @@ export default function Message({
       }
     };
 
+    const renderFromHtml = async (html) => {
+      if (!html) return;
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        const chartDiv =
+          doc.querySelector(".plotly-graph-div") ||
+          doc.querySelector("div[id^='chart_']");
+        if (!chartDiv) return;
+        const chartClone = chartDiv.cloneNode(true);
+        plotContainer.innerHTML = "";
+        plotContainer.appendChild(chartClone);
+
+        await ensurePlotlyLoaded();
+        const scripts = Array.from(doc.querySelectorAll("script"));
+        scripts.forEach((s) => {
+          if (s.src?.includes("plotly")) return;
+          if (s.textContent?.trim()) {
+            const newScript = document.createElement("script");
+            newScript.textContent = s.textContent;
+            plotContainer.appendChild(newScript);
+          }
+        });
+        setChartReady(true);
+      } catch (e) {
+        console.error("Ошибка отрисовки chart_html:", e);
+      }
+    };
+
     const loadAndRender = async () => {
       try {
-        // 1. Если график уже готов (стрим или raw_data)
-        if (chart.success && rawData?.length) {
-          if (!window.Plotly) {
-            const s = document.createElement("script");
-            s.src = "https://cdn.plot.ly/plotly-3.1.0.min.js";
-            s.onload = () => renderPlot(rawData);
-            document.body.appendChild(s);
-          } else {
-            renderPlot(rawData);
-          }
-          return;
-        }
-
-        // 2. Если график есть в истории, нужно загрузить по chart_id
+        if (rawData?.length) return await renderFromRawData();
+        if (chart.chart_html) return await renderFromHtml(chart.chart_html);
         if (chart.chart_id && !chart.success) {
           const response = await api.get(`/api/charts/${chart.chart_id}`);
           const html = response.data?.chart_html;
-          if (!response.data?.success || !html) return;
-
-          add;
-          if (html) {
-            const container = chartRef.current;
-            if (!container) return;
-
-            // Очищаем контейнер перед новой отрисовкой // UPDATED
-            container.innerHTML = "";
-
-            try {
-              // Разбираем полный HTML, который прислал бэк // UPDATED
-              const parser = new DOMParser();
-              const doc = parser.parseFromString(html, "text/html");
-
-              // Ищем основной div графика (plotly-graph-div или div с id chart_...) // UPDATED
-              const chartDivFromHtml =
-                doc.querySelector(".plotly-graph-div") ||
-                doc.querySelector("div[id^='chart_']");
-              let chartId = chartDivFromHtml?.id;
-
-              if (!chartId) {
-                const idMatch = html.match(/Plotly\.newPlot\(\s*"([^"]+)"/);
-                if (idMatch) chartId = idMatch[1];
-              }
-
-              if (chartDivFromHtml) {
-                const chartClone = chartDivFromHtml.cloneNode(true);
-                // гарантируем id на клоні, чтобы Plotly.newPlot нашел контейнер // UPDATED
-                if (chartId) chartClone.id = chartId;
-                container.appendChild(chartClone);
-              }
-
-              // Функция гарантирует загрузку Plotly перед исполнением inline-скриптов // UPDATED
-              const ensurePlotlyLoaded = () =>
-                new Promise((resolve) => {
-                  if (window.Plotly) {
-                    resolve();
-                    return;
-                  }
-
-                  const plotlyScriptTag = Array.from(
-                    doc.querySelectorAll("script"),
-                  ).find((s) => (s.src || "").includes("plotly"));
-
-                  const script = document.createElement("script");
-                  script.async = false;
-                  script.src =
-                    plotlyScriptTag?.src ||
-                    "https://cdn.plot.ly/plotly-3.1.0.min.js";
-                  script.onload = () => {
-                    console.log("✅ Plotly loaded for chart_html"); // UPDATED
-                    resolve();
-                  };
-                  script.onerror = () => resolve();
-                  document.body.appendChild(script);
-                });
-
-              // Ждём Plotly и только после этого выполняем все inline-скрипты из chart_html // UPDATED
-              await ensurePlotlyLoaded();
-
-              Array.from(doc.querySelectorAll("script")).forEach((script) => {
-                const src = script.src || "";
-                // внешний загрузчик Plotly уже обработан выше // UPDATED
-                if (src && src.includes("plotly")) return;
-
-                if (script.textContent && script.textContent.trim()) {
-                  const newScript = document.createElement("script");
-                  newScript.type = "text/javascript";
-                  newScript.textContent = script.textContent;
-                  // скрипт выполняется уже в реальном документе, где есть div с нужным id // UPDATED
-                  container.appendChild(newScript);
-                }
-              });
-
-              console.log(
-                "✅ Chart HTML вставлен и Plotly.newPlot выполнен через DOMParser",
-              ); // UPDATED
-              setChartReady(true);
-            } catch (e) {
-              console.error("Ошибка парсинга/отрисовки chart_html:", e); // UPDATED
-            }
-          }
+          if (response.data?.success && html) await renderFromHtml(html);
         }
-      } catch (error) {
-        console.error("Ошибка загрузки чарта:", error);
+      } catch (err) {
+        console.error("Ошибка загрузки чарта:", err);
       }
     };
 
     loadAndRender();
 
     return () => {
-      if (window.Plotly && plotDiv) window.Plotly.purge(plotDiv);
+      // UPDATED: безопасное очищение без прямого удаления элементов из DOM,
+      // чтобы React не вызывал NotFoundError при повторном размонтировании
+      if (plotContainer) {
+        try {
+          while (plotContainer.firstChild) {
+            plotContainer.removeChild(plotContainer.firstChild);
+          }
+        } catch (e) {
+          console.warn("Chart cleanup skipped:", e);
+        }
+      }
     };
   }, [chart, rawData]);
 
@@ -575,6 +538,7 @@ export default function Message({
         {(chart?.chart_id || (chart?.success && rawData?.length > 0)) && (
           <div
             ref={chartRef}
+            id={`chart-${chart.chart_id}`}
             className="chart-container fade-in mt-4"
             data-id={chart.chart_id}
             style={{ minHeight: 400 }}
