@@ -118,27 +118,85 @@ export default function Message({
           const html = response.data?.chart_html;
           if (!response.data?.success || !html) return;
 
-          // попытка безопасно извлечь вызов Plotly.newPlot
-          const plotMatch = html.match(/Plotly\.newPlot\(([\s\S]*?)\);/);
-          if (plotMatch) {
-            const argsCode = plotMatch[1];
-            const runPlot = () => {
-              try {
-                // eslint-disable-next-line no-new-func
-                const fn = new Function(`return Plotly.newPlot(${argsCode});`);
-                fn();
-                setChartReady(true);
-              } catch (err) {
-                console.error("Ошибка выполнения Plotly.newPlot:", err);
+          add;
+          if (html) {
+            const container = chartRef.current;
+            if (!container) return;
+
+            // Очищаем контейнер перед новой отрисовкой // UPDATED
+            container.innerHTML = "";
+
+            try {
+              // Разбираем полный HTML, который прислал бэк // UPDATED
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(html, "text/html");
+
+              // Ищем основной div графика (plotly-graph-div или div с id chart_...) // UPDATED
+              const chartDivFromHtml =
+                doc.querySelector(".plotly-graph-div") ||
+                doc.querySelector("div[id^='chart_']");
+              let chartId = chartDivFromHtml?.id;
+
+              if (!chartId) {
+                const idMatch = html.match(/Plotly\.newPlot\(\s*"([^"]+)"/);
+                if (idMatch) chartId = idMatch[1];
               }
-            };
-            if (!window.Plotly) {
-              const s = document.createElement("script");
-              s.src = "https://cdn.plot.ly/plotly-3.1.0.min.js";
-              s.onload = runPlot;
-              document.body.appendChild(s);
-            } else {
-              runPlot();
+
+              if (chartDivFromHtml) {
+                const chartClone = chartDivFromHtml.cloneNode(true);
+                // гарантируем id на клоні, чтобы Plotly.newPlot нашел контейнер // UPDATED
+                if (chartId) chartClone.id = chartId;
+                container.appendChild(chartClone);
+              }
+
+              // Функция гарантирует загрузку Plotly перед исполнением inline-скриптов // UPDATED
+              const ensurePlotlyLoaded = () =>
+                new Promise((resolve) => {
+                  if (window.Plotly) {
+                    resolve();
+                    return;
+                  }
+
+                  const plotlyScriptTag = Array.from(
+                    doc.querySelectorAll("script"),
+                  ).find((s) => (s.src || "").includes("plotly"));
+
+                  const script = document.createElement("script");
+                  script.async = false;
+                  script.src =
+                    plotlyScriptTag?.src ||
+                    "https://cdn.plot.ly/plotly-3.1.0.min.js";
+                  script.onload = () => {
+                    console.log("✅ Plotly loaded for chart_html"); // UPDATED
+                    resolve();
+                  };
+                  script.onerror = () => resolve();
+                  document.body.appendChild(script);
+                });
+
+              // Ждём Plotly и только после этого выполняем все inline-скрипты из chart_html // UPDATED
+              await ensurePlotlyLoaded();
+
+              Array.from(doc.querySelectorAll("script")).forEach((script) => {
+                const src = script.src || "";
+                // внешний загрузчик Plotly уже обработан выше // UPDATED
+                if (src && src.includes("plotly")) return;
+
+                if (script.textContent && script.textContent.trim()) {
+                  const newScript = document.createElement("script");
+                  newScript.type = "text/javascript";
+                  newScript.textContent = script.textContent;
+                  // скрипт выполняется уже в реальном документе, где есть div с нужным id // UPDATED
+                  container.appendChild(newScript);
+                }
+              });
+
+              console.log(
+                "✅ Chart HTML вставлен и Plotly.newPlot выполнен через DOMParser",
+              ); // UPDATED
+              setChartReady(true);
+            } catch (e) {
+              console.error("Ошибка парсинга/отрисовки chart_html:", e); // UPDATED
             }
           }
         }
