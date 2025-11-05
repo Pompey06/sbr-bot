@@ -146,7 +146,10 @@ export default function Message({
 
     const loadAndRender = async () => {
       try {
-        if (rawData?.length) return await renderFromRawData();
+        // UPDATED: если есть chart_id, рендерим так же, как при загрузке из history (через /api/charts),
+        // а rawData используем только для "чистых" графиков без chart_id
+        if (rawData?.length && !chart?.chart_id)
+          return await renderFromRawData();
         if (chart.chart_html) return await renderFromHtml(chart.chart_html);
         if (chart.chart_id && !chart.success) {
           const response = await api.get(`/api/charts/${chart.chart_id}`);
