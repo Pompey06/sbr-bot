@@ -235,6 +235,10 @@
   cursor: default;
 }
 
+.message__text {
+  max-width: 100%;
+}
+
 @media (max-width: 1500px) {
   .chat-window-start__content--alt {
     font-size: 16px;
