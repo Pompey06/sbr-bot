@@ -217,38 +217,58 @@ const ChatProvider = ({ children }) => {
         params: { limit },
       });
 
-      const baseMessages = (data?.messages || []).map((m) => ({
-        text: m?.content ?? "",
-        isUser: m?.role === "user",
-        isFeedback: false,
-        isButton: false,
-        timestamp: m?.timestamp,
+      const baseMessages = (data?.messages || []).map((m) => {
+        // UPDATED: history теперь может содержать display_data – используем его для таблицы
+        const hasDisplayData =
+          Array.isArray(m?.display_data) && m.display_data.length > 0;
 
-        // Excel — как в онлайн-ответе
-        hasExcel: !!m?.has_excel,
-        excelFile: m?.has_excel
-          ? {
-              file_id: m?.excel_file_id,
-              filename: m?.excel_filename,
-            }
-          : null,
+        const tableColumns =
+          hasDisplayData && m.display_data[0]
+            ? Object.keys(m.display_data[0])
+            : Array.isArray(m?.table_columns)
+            ? m.table_columns
+            : [];
 
-        // Chart — передаём chart_id и явный success:false,
-        // чтобы Message.jsx пошёл по ветке загрузки /api/charts/{chart_id}
-        hasChart: !!m?.has_chart,
-        chart: m?.has_chart
-          ? {
-              chart_id: m?.chart_id,
-              chart_type: m?.chart_type,
-              success: false, // UPDATED: явно помечаем как "исторический" график без rawData
-            }
-          : null,
+        const rawData = hasDisplayData
+          ? m.display_data
+          : Array.isArray(m?.raw_data)
+          ? m.raw_data
+          : [];
 
-        // Таблица / данные — структура та же, что и у поточного ответа
-        showTable: !!m?.show_table,
-        tableColumns: Array.isArray(m?.table_columns) ? m.table_columns : [],
-        rawData: Array.isArray(m?.raw_data) ? m.raw_data : [],
-      }));
+        return {
+          text: m?.content ?? "",
+          isUser: m?.role === "user",
+          isFeedback: false,
+          isButton: false,
+          timestamp: m?.timestamp,
+
+          // Excel — как в онлайн-ответе
+          hasExcel: !!m?.has_excel,
+          excelFile: m?.has_excel
+            ? {
+                file_id: m?.excel_file_id,
+                filename: m?.excel_filename,
+              }
+            : null,
+
+          // Chart — передаём chart_id и явный success:false,
+          // чтобы Message.jsx пошёл по ветке загрузки /api/charts/{chart_id}
+          hasChart: !!m?.has_chart,
+          chart: m?.has_chart
+            ? {
+                chart_id: m?.chart_id,
+                chart_type: m?.chart_type,
+                success: false, // UPDATED: явно помечаем как "исторический" график без rawData
+              }
+            : null,
+
+          // Таблица / данные — при наличии display_data строим таблицу,
+          // иначе остаёмся на старой логике show_table/raw_data
+          showTable: hasDisplayData ? true : !!m?.show_table,
+          tableColumns,
+          rawData,
+        };
+      });
 
       // UPDATED: гарантируем сохранение message_id для всех сообщений ассистента
       try {
