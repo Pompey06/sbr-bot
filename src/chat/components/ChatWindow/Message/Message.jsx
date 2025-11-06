@@ -47,6 +47,7 @@ export default function Message({
   const [downloadingId, setDownloadingId] = useState(null);
   const [forceRender, setForceRender] = useState(false);
   const [chartReady, setChartReady] = useState(false);
+  const [showFullChart, setShowFullChart] = useState(false);
   const chartRef = useRef(null);
 
   // 1) Добавили состояние для управления «скрытием» тултипа кнопки «Копировать»
@@ -539,17 +540,100 @@ export default function Message({
           </div>
         )}
         {(chart?.chart_id || (chart?.success && rawData?.length > 0)) && (
-          <div
-            ref={chartRef}
-            id={`chart-${chart.chart_id}`}
-            className="chart-container fade-in mt-4"
-            data-id={chart.chart_id}
-            style={{ minHeight: 400 }}
-          >
-            {!chartReady && (
-              <div className="text-gray-400 text-sm">{t("chart.loading")}</div>
+          <>
+            <div
+              ref={chartRef}
+              id={`chart-${chart.chart_id}`}
+              className="chart-container fade-in mt-4 cursor-zoom-in"
+              data-id={chart.chart_id}
+              style={{ minHeight: 400 }}
+              onDoubleClick={() => setShowFullChart(true)} // двойной клик открывает полноэкранный режим
+            >
+              {!chartReady && (
+                <div className="text-gray-400 text-sm">
+                  {t("chart.loading")}
+                </div>
+              )}
+            </div>
+
+            {showFullChart && (
+              <div
+                className="fixed inset-0 bg-black/90 flex items-center justify-center z-[9999]"
+                onClick={() => setShowFullChart(false)}
+              >
+                <div
+                  className="relative w-11/12 h-[90vh] bg-white rounded-lg overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={() => setShowFullChart(false)}
+                    className="absolute top-3 right-4 text-white text-3xl z-10"
+                  >
+                    &times;
+                  </button>
+                  <div
+                    id={`chart-full-${chart.chart_id}`}
+                    className="flex items-center justify-center w-full h-full bg-white"
+                    ref={(el) => {
+                      if (!el || !chartRef.current || !chartReady) return;
+
+                      // Клонируем график
+                      const clone = chartRef.current.cloneNode(true);
+                      el.innerHTML = "";
+                      el.appendChild(clone);
+
+                      const plotRoot =
+                        el.querySelector(".js-plotly-plot") ||
+                        el.querySelector(".plotly-graph-div");
+                      if (!plotRoot) return;
+
+                      // 1. Центрирование контейнера
+                      plotRoot.style.display = "flex";
+                      plotRoot.style.alignItems = "center";
+                      plotRoot.style.justifyContent = "center";
+                      plotRoot.style.margin = "auto";
+                      plotRoot.style.position = "relative";
+                      plotRoot.style.transformOrigin = "center center";
+
+                      // 2. Сбрасываем все фиксированные размеры
+                      const all = el.querySelectorAll(
+                        ".plot-container, .svg-container, svg, .main-svg",
+                      );
+                      all.forEach((node) => {
+                        node.removeAttribute("width");
+                        node.removeAttribute("height");
+                        node.style.width = "100%";
+                        node.style.height = "100%";
+                        node.style.maxWidth = "none";
+                        node.style.maxHeight = "none";
+                      });
+
+                      // 3. Масштабируем весь график, сохраняя пропорции
+                      const containerWidth = el.offsetWidth;
+                      const containerHeight = el.offsetHeight;
+                      const baseWidth = 628;
+                      const baseHeight = 500;
+                      const scale = Math.min(
+                        containerWidth / baseWidth,
+                        containerHeight / baseHeight,
+                      );
+
+                      plotRoot.style.width = `${baseWidth}px`;
+                      plotRoot.style.height = `${baseHeight}px`;
+                      plotRoot.style.transform = `scale(${scale})`;
+
+                      // 4. Центрируем с учётом трансформации
+                      plotRoot.style.position = "absolute";
+                      plotRoot.style.top = "50%";
+                      plotRoot.style.left = "50%";
+                      plotRoot.style.transformOrigin = "center center";
+                      plotRoot.style.transform = `translate(-50%, -50%) scale(${scale})`;
+                    }}
+                  />
+                </div>
+              </div>
             )}
-          </div>
+          </>
         )}
 
         {/* ========== Кнопка «Копировать» ========== */}
