@@ -560,6 +560,13 @@ export default function Message({
               <div
                 className="fixed inset-0 bg-black/90 flex items-center justify-center z-[9999]"
                 onClick={() => setShowFullChart(false)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }
+                }}
+                tabIndex={-1}
               >
                 <div
                   className="relative w-11/12 h-[90vh] bg-white rounded-lg overflow-hidden"
