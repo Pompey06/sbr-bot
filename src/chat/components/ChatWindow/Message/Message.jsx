@@ -9,7 +9,7 @@ import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import checkIcon from "../../../assets/checkmark.svg";
 import copyIcon from "../../../assets/copy.svg";
-import downloadIcon from "../../../assets/pdf.svg";
+import downloadIcon from "../../../assets/excel.svg";
 import personImage from "../../../assets/person.png";
 import { ChatContext } from "../../../context/ChatContext";
 import chatI18n from "../../../i18n";
