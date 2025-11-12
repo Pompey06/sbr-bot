@@ -3,6 +3,7 @@ import MessageList from "./MessageList/MessageList";
 import MessageInput from "./MessageInput/MessageInput";
 import BinModal from "../ChatWindow/Modal/BinModal";
 import FaqModal from "../ChatWindow/Modal/FaqModal";
+import faqs from "../../assets/faqs.json";
 import { ChatContext } from "../../context/ChatContext";
 import Header from "../Header/Header";
 import "./ChatWindow.css";
@@ -40,6 +41,13 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
 
   const handleLanguageChange = (lang) => {
     updateLocale(lang);
+  };
+
+  const normalizeLang = (lang) => {
+    if (lang === "рус") return "ru";
+    if (lang === "қаз") return "kk";
+    if (lang === "eng") return "en";
+    return "ru";
   };
 
   const getLogoByLang = () => {
@@ -157,6 +165,23 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
               {t("faq.button")}
             </button>
 
+            <div className="flex flex-wrap buttons__wrapper justify-center gap-3  fade-in">
+              {(faqs.faqs || []).slice(0, 6).map((faq, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() =>
+                    setInputPrefill(
+                      faq.questions[normalizeLang(currentLang)] || "",
+                    )
+                  }
+                  className="bg-blue-600 text-white px-5 py-2 rounded-full text-sm shadow-md start__button transition-all hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5"
+                >
+                  {faq.questions[normalizeLang(currentLang)]}
+                </button>
+              ))}
+            </div>
+
             <MessageList
               isSidebarOpen={isSidebarOpen}
               toggleSidebar={toggleSidebar}
@@ -243,6 +268,23 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
             >
               {t("faq.button")}
             </button>
+
+            <div className="flex flex-wrap buttons__wrapper justify-center gap-3  fade-in">
+              {(faqs.faqs || []).slice(0, 6).map((faq, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() =>
+                    setInputPrefill(
+                      faq.questions[normalizeLang(currentLang)] || "",
+                    )
+                  }
+                  className="bg-blue-600 text-white px-5 py-2 rounded-full text-sm shadow-md start__button transition-all hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5"
+                >
+                  {faq.questions[normalizeLang(currentLang)]}
+                </button>
+              ))}
+            </div>
 
             <MessageList
               isSidebarOpen={isSidebarOpen}
