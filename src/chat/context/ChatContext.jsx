@@ -839,7 +839,7 @@ const ChatProvider = ({ children }) => {
       // 3️⃣ Гарантируем наличие session_id
       let sessionId = currentChatId;
       if (!sessionId) {
-        const sessionName = (text || "New chat").slice(0, 50);
+        const sessionName = text || "New chat";
         sessionId = await createBackendSession({ sessionName });
         if (sessionId) {
           setCurrentChatId(sessionId);
@@ -955,7 +955,7 @@ const ChatProvider = ({ children }) => {
           ...prev[ci],
           messages: updatedMessages,
           id: sid || prev[ci].id,
-          title: prev[ci].title ?? (text || "New chat").slice(0, 50),
+          title: prev[ci].title ?? (text || "New chat"),
           lastUpdated: new Date().toISOString(),
         };
 
@@ -1234,7 +1234,7 @@ const ChatProvider = ({ children }) => {
         // UPDATED: гарантируем session_id перед запросом в /api/chat
         let sessionId = currentChatId;
         if (!sessionId) {
-          const sessionName = (text || "New chat").slice(0, 50);
+          const sessionName = text || "New chat";
 
           // создаём сессию
           sessionId = await createBackendSession({ sessionName });
