@@ -12,7 +12,7 @@
   display: none;
 }
 
-.buttons__wrapper {
+.faq-buttons__wrapper {
   justify-content: center;
   align-items: center;
   gap: 15px;
@@ -217,7 +217,7 @@
   .start__button {
     padding: 10px 12px;
   }
-  .buttons__wrapper {
+  .faq-buttons__wrapper {
     padding-left: 8px;
     padding-right: 8px;
   }

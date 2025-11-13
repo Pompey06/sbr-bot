@@ -165,7 +165,7 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
               {t("faq.button")}
             </button>
 
-            <div className="flex flex-wrap buttons__wrapper justify-center gap-3  fade-in">
+            <div className="flex flex-wrap faq-buttons__wrapper justify-center gap-3  fade-in">
               {(faqs.faqs || []).slice(0, 6).map((faq, idx) => (
                 <button
                   key={idx}
@@ -269,7 +269,7 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
               {t("faq.button")}
             </button>
 
-            <div className="flex flex-wrap buttons__wrapper justify-center gap-3  fade-in">
+            <div className="flex flex-wrap faq-buttons__wrapper justify-center gap-3  fade-in">
               {(faqs.faqs || []).slice(0, 6).map((faq, idx) => (
                 <button
                   key={idx}
