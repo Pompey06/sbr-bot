@@ -374,6 +374,31 @@ const ChatProvider = ({ children }) => {
     }
   };
 
+  const cacheMessageIdsFromHistory = async (sessionId) => {
+    try {
+      if (!sessionId) return;
+
+      const { data } = await apiNew.get(`/api/sessions/${sessionId}/history`, {
+        params: { limit: 50 },
+      });
+
+      let botIndex = 0;
+      (data?.messages || []).forEach((m) => {
+        if (m?.role === "assistant" && m?.id) {
+          saveMessageId(sessionId, botIndex, m.id);
+          console.log("💾 cached message_id from history:", {
+            chat: sessionId,
+            botIndex,
+            message_id: m.id,
+          });
+          botIndex++;
+        }
+      });
+    } catch (error) {
+      console.error("Error caching message ids from history:", error);
+    }
+  };
+
   const removeBadFeedbackMessage = () => {
     setChats((prevChats) =>
       prevChats.map((chat) => {
@@ -1209,10 +1234,12 @@ const ChatProvider = ({ children }) => {
     );
 
     try {
-      // === создаём мок вместо реального запроса ===
       const useMock = false;
       let reader;
       let decoder = new TextDecoder("utf-8");
+
+      // sessionId нужен и внутри цикла, и в обработке complete
+      let sessionId = currentChatId;
 
       if (useMock) {
         const mockStream = await import("../../streamMock.json").then(
@@ -1231,16 +1258,13 @@ const ChatProvider = ({ children }) => {
           },
         };
       } else {
-        // UPDATED: гарантируем session_id перед запросом в /api/chat
-        let sessionId = currentChatId;
+        // гарантируем наличие session_id
         if (!sessionId) {
           const sessionName = text || "New chat";
 
-          // создаём сессию
           sessionId = await createBackendSession({ sessionName });
 
           if (sessionId) {
-            // локально прокидываем новый id и временный title
             setCurrentChatId(sessionId);
             setChats((prev) => {
               const ci = prev.findIndex((c) =>
@@ -1258,14 +1282,13 @@ const ChatProvider = ({ children }) => {
               return copy;
             });
 
-            // сразу дергаем PUT /api/sessions/{session_id}/name
             try {
               await apiNew.put(`/api/sessions/${sessionId}/name`, {
                 session_name: sessionName,
               });
-              console.log("📝 session name updated:", sessionName); // UPDATED
+              console.log("📝 session name updated:", sessionName);
             } catch (err) {
-              console.error("Ошибка при обновлении имени сессии:", err); // UPDATED
+              console.error("Ошибка при обновлении имени сессии:", err);
             }
           }
         }
@@ -1288,7 +1311,6 @@ const ChatProvider = ({ children }) => {
           return null;
         };
 
-        // основной запрос в /api/chat (стрим)
         const response = await fetch(
           `${
             import.meta.env.VITE_API_URL_NEW || "http://172.16.17.4:8001"
@@ -1311,19 +1333,26 @@ const ChatProvider = ({ children }) => {
       // === читаем поток ===
       let buffer = "";
       let accumulatedText = "";
+
+      // сюда сохраним данные для saveMessageId после цикла
+      let lastBotIndexForSave = null;
+      let lastSessionForSave = null;
+      let lastMessageIdForSave = null;
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
 
         const parts = buffer.split("\n");
-        buffer = parts.pop(); // оставляем неполный кусок
+        buffer = parts.pop();
 
         for (const line of parts) {
           if (!line.startsWith("data:")) continue;
           const json = line.slice(5).trim();
           if (!json) continue;
           const parsed = JSON.parse(json);
+
           if (parsed.type === "text") {
             const chunkText =
               typeof parsed.content === "string"
@@ -1351,14 +1380,35 @@ const ChatProvider = ({ children }) => {
               }),
             );
           } else if (parsed.type === "complete") {
-            // Финальный ответ с таблицей и Excel
-            // если внутри есть поле "response", берём именно его
-            const safeResponse =
-              typeof parsed.response === "object" && parsed.response?.response
-                ? parsed.response.response
-                : typeof parsed.response === "string"
+            // Бэкенд может присылать данные как в корне, так и во вложенном response
+            const respObject =
+              parsed &&
+              typeof parsed.response === "object" &&
+              parsed.response !== null
                 ? parsed.response
-                : String(parsed.response || "");
+                : {};
+
+            // Текст ответа:
+            // - либо parsed.response как строка
+            // - либо respObject.response
+            const textFromResponse =
+              typeof parsed.response === "string"
+                ? parsed.response
+                : typeof respObject.response === "string"
+                ? respObject.response
+                : "";
+
+            const safeResponse = textFromResponse || "";
+
+            // session_id: сначала берём из вложенного объекта, потом из корня
+            const sidFromResponse =
+              respObject.session_id ||
+              parsed.session_id ||
+              sessionId ||
+              currentChatId;
+
+            // message_id: сначала из вложенного объекта, потом из корня
+            const msgId = respObject.message_id || parsed.message_id || null;
 
             setChats((prev) =>
               prev.map((chat) => {
@@ -1369,31 +1419,65 @@ const ChatProvider = ({ children }) => {
                   ...chat.messages[idx],
                   text: safeResponse,
                   streaming: false,
-                  chart: parsed.chart || parsed.response?.chart || null,
-                  excelFile:
-                    parsed.excel_file || parsed.response?.excel_file || null,
+                  chart: parsed.chart || respObject.chart || null,
+                  excelFile: parsed.excel_file || respObject.excel_file || null,
                   hasExcel:
                     parsed.has_excel ||
-                    parsed.response?.has_excel ||
-                    !!parsed.response?.excel_file ||
+                    respObject.has_excel ||
+                    !!respObject.excel_file ||
                     false,
                   showTable:
-                    parsed.show_table || parsed.response?.show_table || false,
+                    parsed.show_table || respObject.show_table || false,
                   tableColumns:
-                    parsed.table_columns ||
-                    parsed.response?.table_columns ||
-                    [],
-                  rawData: parsed.raw_data || parsed.response?.raw_data || [],
+                    parsed.table_columns || respObject.table_columns || [],
+                  rawData: parsed.raw_data || respObject.raw_data || [],
                 };
 
                 const copy = [...chat.messages];
                 copy[idx] = updated;
+
+                // вычисляем botIndex для нового ответа и сохраняем данные
+                if (
+                  sidFromResponse &&
+                  msgId &&
+                  String(chat.id) === String(sidFromResponse)
+                ) {
+                  const assistantCount = copy.filter(
+                    (m) => !m.isUser && !m.isFeedback,
+                  ).length;
+                  lastBotIndexForSave = Math.max(assistantCount - 1, 0);
+                  lastSessionForSave = sidFromResponse;
+                  lastMessageIdForSave = msgId;
+                }
+
                 return { ...chat, messages: copy };
               }),
             );
           } else if (parsed.type === "end") {
             setIsTyping(false);
           }
+        }
+      }
+
+      // Сохраняем message_id → потом FeedbackMessage сможет его достать
+      if (
+        lastSessionForSave &&
+        lastMessageIdForSave &&
+        lastBotIndexForSave !== null
+      ) {
+        try {
+          saveMessageId(
+            lastSessionForSave,
+            lastBotIndexForSave,
+            lastMessageIdForSave,
+          );
+          console.log("💾 stored live message_id:", {
+            chat: lastSessionForSave,
+            botIndex: lastBotIndexForSave,
+            message_id: lastMessageIdForSave,
+          });
+        } catch (e) {
+          console.error("Ошибка сохранения message_id:", e);
         }
       }
     } catch (err) {
@@ -1598,6 +1682,7 @@ const ChatProvider = ({ children }) => {
         removeBadFeedbackMessage,
         isInBinFlow,
         setIsInBinFlow,
+        cacheMessageIdsFromHistory,
       }}
     >
       {children}
