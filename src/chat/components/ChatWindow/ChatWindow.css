@@ -32,7 +32,7 @@
 }
 
 .annotation {
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .language {
@@ -220,5 +220,10 @@
   .faq-buttons__wrapper {
     padding-left: 8px;
     padding-right: 8px;
+  }
+  .annotation {
+    font-size: 10px;
+    text-align: center;
+    margin-top: 0;
   }
 }

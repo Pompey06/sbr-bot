@@ -150,6 +150,9 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
               >
                 {t(useAltGreeting ? "chat.greetingAlt" : "chat.greeting")}
               </div>
+              <p className="text-xs text-gray-500 mt-3 leading-snug annotation">
+                {t("chat.annotation")}
+              </p>
             </div>
 
             <MessageInput

@@ -31,15 +31,15 @@ input:focus {
 }
 
 .message-list-wrap {
-  min-height: calc(100vh - 158px) !important;
-  max-height: calc(100vh - 158px) !important;
+  min-height: calc(100vh - 170px) !important;
+  max-height: calc(100vh - 170px) !important;
 }
 
 .message-list {
   padding-top: 30px;
   padding-left: 30px;
   padding-right: 40px;
-  min-height: calc(100vh - 158px) !important;
+  min-height: calc(100vh - 170px) !important;
 }
 
 .sidebar {
@@ -48,21 +48,41 @@ input:focus {
 
 @media (max-width: 1550px) {
   .message-list-wrap {
-    min-height: calc(100vh - 155px) !important;
-    max-height: calc(100vh - 155px) !important;
+    min-height: calc(100vh - 185px) !important;
+    max-height: calc(100vh - 185px) !important;
   }
   .message-list {
-    min-height: calc(100vh - 155px) !important;
+    min-height: calc(100vh - 185px) !important;
   }
 }
 
-@media (max-width: 920px) {
+@media (max-width: 1200px) {
   .message-list-wrap {
-    min-height: calc(100vh - 170px) !important;
-    max-height: calc(100vh - 170px) !important;
+    min-height: calc(100vh - 190px) !important;
+    max-height: calc(100vh - 190px) !important;
   }
   .message-list {
-    min-height: calc(100vh - 170px) !important;
+    min-height: calc(100vh - 190px) !important;
+  }
+}
+
+@media (max-width: 1000px) {
+  .message-list-wrap {
+    min-height: calc(100vh - 220px) !important;
+    max-height: calc(100vh - 220px) !important;
+  }
+  .message-list {
+    min-height: calc(100vh - 220px) !important;
+  }
+}
+
+@media (max-width: 800px) {
+  .message-list-wrap {
+    min-height: calc(100vh - 250px) !important;
+    max-height: calc(100vh - 250px) !important;
+  }
+  .message-list {
+    min-height: calc(100vh - 250px) !important;
   }
 }
 
@@ -81,40 +101,40 @@ input:focus {
     margin-bottom: 10px !important;
   }
   .message-list-wrap {
-    min-height: calc(100vh - 150px) !important;
-    max-height: calc(100vh - 150px) !important;
+    min-height: calc(100vh - 200px) !important;
+    max-height: calc(100vh - 200px) !important;
   }
   .message-list {
-    min-height: calc(100vh - 150px) !important;
+    min-height: calc(100vh - 200px) !important;
   }
 }
 
 @media (max-width: 650px) {
   .message-list-wrap {
-    min-height: calc(100vh - 165px) !important;
-    max-height: calc(100vh - 165px) !important;
+    min-height: calc(100vh - 225px) !important;
+    max-height: calc(100vh - 225px) !important;
   }
   .message-list {
-    min-height: calc(100vh - 165px) !important;
+    min-height: calc(100vh - 225px) !important;
   }
 }
 
-@media (max-width: 450px) {
+@media (max-width: 480px) {
   .message-list-wrap {
-    min-height: calc(100vh - 175px) !important;
-    max-height: calc(100vh - 175px) !important;
+    min-height: calc(100vh - 280px) !important;
+    max-height: calc(100vh - 280px) !important;
   }
   .message-list {
-    min-height: calc(100vh - 175px) !important;
+    min-height: calc(100vh - 280px) !important;
   }
 }
 
 @media (max-width: 350px) {
   .message-list-wrap {
-    min-height: calc(100vh - 190px) !important;
-    max-height: calc(100vh - 190px) !important;
+    min-height: calc(100vh - 310px) !important;
+    max-height: calc(100vh - 310px) !important;
   }
   .message-list {
-    min-height: calc(100vh - 190px) !important;
+    min-height: calc(100vh - 310px) !important;
   }
 }

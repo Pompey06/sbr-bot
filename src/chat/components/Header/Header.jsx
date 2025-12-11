@@ -45,7 +45,7 @@ const Header = ({ isSidebarOpen, toggleSidebar }) => {
         </button>
         <button
           className={`language__button rounded ${
-            currentLang === "en" ? "bg-blue text-white" : "bg-gray color-blue"
+            currentLang === "eng" ? "bg-blue text-white" : "bg-gray color-blue"
           }`}
           onClick={() => handleLanguageChange("eng")}
         >

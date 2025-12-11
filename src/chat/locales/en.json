@@ -12,7 +12,7 @@
     "greetingAlt": "Hello! How can I assist you?",
     "sources": "Additionally, I attach instructions for the form:",
     "interestingSuggestion": "You may also be interested in...",
-    "annotation": "The 'Statistical Business Register' (SBR) information system contains brief administrative and economic data on legal entities registered in the Republic of Kazakhstan, their branches and representative offices of foreign legal entities, as well as on individual entrepreneurs, including small and medium-sized enterprises and farming entities. The Chatbot has access to the following non-confidential information from SBR: BIN/IIN, full name, registration date, NACE code, name of the main activity, secondary NACE code, enterprise size classifier (ESC) and its name, economic sector classifier (ESC) and its name, ownership form classifier (OFC) and its name, administrative-territorial object classifier (ATOC), name of the settlement, legal address (excluding sole proprietors and farm enterprises), and the head’s full name."
+    "annotation": "Within the framework of the functioning of this chatbot, information is available from the SBR, which, in accordance with Article 8 of the Law of the Republic of Kazakhstan “On State Statistics,” is considered non-confidential"
   },
   "sidebar": {
     "close": "Close sidebar",
@@ -49,7 +49,7 @@
     "sendIconAlt": "Send icon",
     "sentMessage": "Message sent",
     "text": "Our bot uses AI and is in testing stage. There may be inaccuracies in answers. If you encounter them, please let us know by filling out the feedback form.",
-    "textAlt": "The information is provided by an AI-based virtual assistant according to the data from the Statistical Business Register. The information provided by the chatbot is purely informative and does not have the force of a legal or other official document. If necessary, we recommend contacting the call center at 1446."
+    "textAlt": "The information is provided by a virtual assistant based on artificial intelligence in accordance with the data of the Statistical business register. The information provided is for informational purposes only and does not have legal force or the status of an official document. The chat-bot tries to ensure the accuracy of the data, however, it is recommended to double-check important information on the official website of the National Bureau of Statistics www.stat.gov.kz. If necessary, we recommend contacting the call center at 1446"
   },
   "chatError": {
     "errorMessage": "Sorry, an error occurred. Please rephrase your request."
