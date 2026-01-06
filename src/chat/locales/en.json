@@ -19,7 +19,7 @@
     "newChat": "New chat",
     "previousRequest": "Previous request",
     "previousChat": "Previous chat {{number}}",
-    "warning": "Attention: requests older than 7 days are automatically deleted",
+    "warning": "Attention: requests older than 30 days are automatically deleted",
     "today": "Today",
     "yesterday": "Yesterday"
   },

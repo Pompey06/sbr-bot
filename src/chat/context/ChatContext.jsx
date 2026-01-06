@@ -96,7 +96,7 @@ const ChatProvider = ({ children }) => {
 
   function autoDeleteInactiveChats() {
     const now = new Date();
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     setChats((prevChats) => {
       // Выделяем дефолтный чат (id === null) отдельно – он не подлежит автоудалению
@@ -105,13 +105,13 @@ const ChatProvider = ({ children }) => {
       // Фильтруем все чаты с id !== null, оставляя только активные (lastUpdated не старше недели)
       const activeNonDefault = prevChats
         .filter((chat) => chat.id !== null)
-        .filter((chat) => new Date(chat.lastUpdated) >= weekAgo);
+        .filter((chat) => new Date(chat.lastUpdated) >= monthAgo);
 
       // Помечаем как удалённые неактивные (только для чатов с id !== null)
       prevChats.forEach((chat) => {
         if (chat.id !== null) {
           const lastUpdatedDate = new Date(chat.lastUpdated);
-          if (lastUpdatedDate < weekAgo) {
+          if (lastUpdatedDate < monthAgo) {
             markChatAsDeleted(chat.id);
           }
         }
