@@ -39,7 +39,7 @@
     "openRegistrationForm": "Fill out the form",
     "selectReasonPlaceholder": "Select a reason",
     "selectReasonError": "Select a reason before submitting",
-    "fillFeedbackError": "Fill in the feedback field before submitting",
+    "fillFeedbackError": "Fill in all fields before submitting",
     "reasons": {
       "wrong_list": "issued an incorrect list",
       "wrong_quantity": "issued an incorrect quantity",

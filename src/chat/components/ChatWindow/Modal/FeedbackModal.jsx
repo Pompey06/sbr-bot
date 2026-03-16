@@ -59,14 +59,16 @@ export default function FeedbackModal({
   const handleSubmit = async () => {
     if (isSubmitting) return;
 
-    if (feedbackType === "bad" && selectedReason.trim() === "") {
-      setIsReasonError(true);
-      return;
-    }
+    if (feedbackType === "bad") {
+      const isReasonEmpty = selectedReason.trim() === "";
+      const isFeedbackEmpty = feedback.trim() === "";
 
-    if (feedbackType === "bad" && feedback.trim() === "") {
-      setIsError(true);
-      return;
+      setIsReasonError(isReasonEmpty);
+      setIsError(isFeedbackEmpty);
+
+      if (isReasonEmpty || isFeedbackEmpty) {
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -143,9 +145,12 @@ export default function FeedbackModal({
               </option>
             ))}
           </select>
+
+          {(isError || isReasonError) && (
+            <p className="text-sm text-red-500">{t("feedback.fillFeedbackError")}</p>
+          )}
         </div>
       )}
-
 
       <div className="mt-6 flex justify-end">
         <button

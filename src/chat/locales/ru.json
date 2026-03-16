@@ -39,7 +39,7 @@
     "openRegistrationForm": "Заполнить форму",
     "selectReasonPlaceholder": "Выберите причину",
     "selectReasonError": "Выберите причину перед отправкой",
-    "fillFeedbackError": "Заполните поле отзыва перед отправкой",
+    "fillFeedbackError": "Заполните все поля перед отправкой",
     "reasons": {
       "wrong_list": "выдал неправильный перечень",
       "wrong_quantity": "выдал неправильное количество",

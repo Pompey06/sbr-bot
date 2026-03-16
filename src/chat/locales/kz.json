@@ -39,7 +39,7 @@
     "openRegistrationForm": "Форманы толтырыңыз",
     "selectReasonPlaceholder": "Себебін таңдаңыз",
     "selectReasonError": "Жіберер алдында себебін таңдаңыз",
-    "fillFeedbackError": "Жіберер алдында пікір өрісін толтырыңыз",
+    "fillFeedbackError": "Жіберер алдында барлық өрістерді толтырыңыз",
     "reasons": {
       "wrong_list": "қате тізім берді",
       "wrong_quantity": "қате санды берді",
