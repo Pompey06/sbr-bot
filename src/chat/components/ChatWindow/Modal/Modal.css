@@ -1,280 +1,350 @@
 /* Основные стили модального окна */
 .fixed {
-   background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .close {
-   position: absolute;
-   top: 20px;
-   right: 20px;
-   cursor: pointer;
-   transition: opacity 0.2s ease;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
 }
 
 .close:hover {
-   opacity: 0.7;
+  opacity: 0.7;
 }
 
 /* Стили для модального окна */
 .modal {
-   border-left: 5px solid #0068bf; /* Синяя полоса слева вместо желтой */
-   border-radius: 8px;
-   background: #fff;
-   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border-left: 5px solid #0068bf; /* Синяя полоса слева вместо желтой */
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
 /* Заголовок модального окна */
 .modal h2 {
-   color: #333;
-   font-family: Roboto, sans-serif;
-   font-size: 18px;
-   font-weight: 500;
-   line-height: 1.3;
-   margin-bottom: 12px;
+  color: #333;
+  font-family: Roboto, sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.3;
+  margin-bottom: 12px;
 }
 
 .modal__wrapper {
-   max-width: 500px !important;
+  max-width: 500px !important;
 }
 
 /* Текст описания */
 .modal p {
-   color: #555;
-   font-family: Roboto, sans-serif;
-   font-size: 12px;
-   font-weight: 400;
-   line-height: 1.5;
-   margin-bottom: 15px;
+  color: #555;
+  font-family: Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  margin-bottom: 15px;
 }
 
 /* Textarea */
 textarea {
-   border-radius: 8px;
-   border: 1px solid #d9d9d9;
-   background: #fff;
-   resize: none;
-   font-size: 14px;
-   color: #555;
-   padding: 12px;
-   box-sizing: border-box;
-   transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  resize: none;
+  font-size: 14px;
+  color: #555;
+  padding: 12px;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 textarea:focus {
-   outline: none;
-   border-color: #0068bf; /* Синий цвет из вашей палитры */
-   box-shadow: 0 0 0 2px rgba(0, 134, 191, 0.2);
+  outline: none;
+  border-color: #0068bf; /* Синий цвет из вашей палитры */
+  box-shadow: 0 0 0 2px rgba(0, 134, 191, 0.2);
 }
 
 /* Кнопка отправки */
 .feedback__button {
-   padding: 10px 24px;
-   border-radius: 6px;
-   background-color: #0068bf;
-   color: white;
-   font-family: Roboto, sans-serif;
-   font-size: 14px;
-   font-weight: 500;
-   line-height: 1;
-   border: none;
-   cursor: pointer;
-   transition: background-color 0.3s ease, transform 0.2s ease;
+  padding: 10px 24px;
+  border-radius: 6px;
+  background-color: #0068bf;
+  color: white;
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .feedback__button:hover {
-   background-color: #0077aa !important;
-   transform: translateY(-1px);
+  background-color: #0077aa !important;
+  transform: translateY(-1px);
 }
 
 .feedback__button:active {
-   transform: translateY(0);
+  transform: translateY(0);
 }
 
 .feedback__button:disabled {
-   background-color: #ccc !important;
-   cursor: not-allowed;
-   transform: none;
+  background-color: #ccc !important;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* Стили для инпутов в регистрации */
 .registration-input {
-   border-radius: 6px;
-   border: 1px solid #d9d9d9;
-   background: #fff;
-   color: #555;
-   font-family: Roboto, sans-serif;
-   font-size: 14px;
-   font-weight: 400;
-   line-height: normal;
-   padding: 10px 12px;
-   box-sizing: border-box;
-   transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  color: #555;
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: normal;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .registration-input::placeholder {
-   color: #999;
-   font-weight: 300;
+  color: #999;
+  font-weight: 300;
 }
 
 .registration-input:focus {
-   outline: none;
-   border-color: #0068bf !important;
-   box-shadow: 0 0 0 2px rgba(0, 134, 191, 0.2);
+  outline: none;
+  border-color: #0068bf !important;
+  box-shadow: 0 0 0 2px rgba(0, 134, 191, 0.2);
 }
 
 /* Textarea для регистрации */
 .registration-textarea {
-   resize: none;
-   border-radius: 6px;
-   border: 1px solid #d9d9d9;
-   background: #fff;
-   color: #555;
-   font-family: Roboto, sans-serif;
-   font-size: 14px;
-   font-weight: 400;
-   line-height: 1.5;
-   padding: 10px 12px;
-   box-sizing: border-box;
-   transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  resize: none;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  color: #555;
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .registration-textarea:focus {
-   outline: none;
-   border-color: #0068bf !important;
-   box-shadow: 0 0 0 2px rgba(0, 134, 191, 0.2);
+  outline: none;
+  border-color: #0068bf !important;
+  box-shadow: 0 0 0 2px rgba(0, 134, 191, 0.2);
 }
 
 /* Стили для модалки регистрации */
 .registration-modal .modal {
-   background: #fff !important;
-   border-left: 5px solid #0068bf;
+  background: #fff !important;
+  border-left: 5px solid #0068bf;
 }
 
 /* Радио-кнопки */
 .entity-radio {
-   width: 18px;
-   height: 18px;
-   min-width: 18px;
-   min-height: 18px;
-   border-radius: 50%;
-   border: 1px solid #0068bf;
-   background: #fff;
-   position: relative;
-   cursor: pointer;
-   transition: border-color 0.2s ease;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  border-radius: 50%;
+  border: 1px solid #0068bf;
+  background: #fff;
+  position: relative;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
 }
 
 .entity-radio.active {
-   border: 1px solid #0068bf;
+  border: 1px solid #0068bf;
 }
 
 .entity-radio.active::after {
-   content: "";
-   position: absolute;
-   top: 4px;
-   left: 4px;
-   width: 8px;
-   height: 8px;
-   border-radius: 50%;
-   background: #0068bf;
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #0068bf;
 }
 
 /* Кнопка выбора файла */
 .choose-file-button {
-   border-radius: 6px;
-   background: #0068bf;
-   border: none;
-   padding: 10px 20px;
-   color: #fff;
-   font-size: 14px;
-   font-weight: 500;
-   line-height: 1;
-   cursor: pointer;
-   transition: background-color 0.3s ease;
+  border-radius: 6px;
+  background: #0068bf;
+  border: none;
+  padding: 10px 20px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .choose-file-button:hover {
-   background: #0077aa;
+  background: #0077aa;
 }
 
 /* Состояние ошибки */
 .error {
-   border: 1px solid #e53e3e !important;
-   box-shadow: 0 0 0 1px rgba(229, 62, 62, 0.2);
+  border: 1px solid #e53e3e !important;
+  box-shadow: 0 0 0 1px rgba(229, 62, 62, 0.2);
 }
 
 select {
-   appearance: none;
-   -webkit-appearance: none;
-   -moz-appearance: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  width: 100%;
+  height: 48px;
+
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  background-color: #fff;
+
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+
+  color: #555;
+
+  padding: 0 40px 0 12px;
+
+  cursor: pointer;
+
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* placeholder стиль */
+select:invalid {
+  color: #9ca3af;
+}
+
+/* фокус как у textarea */
+select:focus {
+  outline: none;
+  border-color: #0068bf;
+  box-shadow: 0 0 0 2px rgba(0, 134, 191, 0.2);
+}
+
+/* hover */
+select:hover {
+  border-color: #0068bf;
 }
 
 .custom-select-container {
-   position: relative;
+  position: relative;
+}
+select {
+  background-image: url("../../../assets/arrow.svg");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 14px;
+}
+
+select option {
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  color: #333;
+  padding: 10px;
+}
+
+select.error {
+  border: 1px solid #e53e3e !important;
+  box-shadow: 0 0 0 1px rgba(229, 62, 62, 0.2);
 }
 
 .custom-select {
-   appearance: none;
-   -webkit-appearance: none;
-   -moz-appearance: none;
-   padding-right: 40px; /* оставляем место для стрелки */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 40px; /* оставляем место для стрелки */
 }
 
 .custom-select-arrow {
-   position: absolute;
-   top: 50%;
-   right: 20px;
-   transform: translateY(-50%);
-   width: 20px;
-   height: 20px;
-   background: url("../../../assets/arrow.svg") no-repeat center center;
-   background-size: contain;
-   transition: transform 0.3s ease;
-   cursor: pointer;
-   pointer-events: none;
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  background: url("../../../assets/arrow.svg") no-repeat center center;
+  background-size: contain;
+  transition: transform 0.3s ease;
+  cursor: pointer;
+  pointer-events: none;
 }
 
 .consent-text {
-   font-family: "Roboto", sans-serif;
-   font-size: 12px;
-   color: #848080;
-   line-height: 1;
-   margin-top: 16px;
-   text-align: center;
+  font-family: "Roboto", sans-serif;
+  font-size: 12px;
+  color: #848080;
+  line-height: 1;
+  margin-top: 16px;
+  text-align: center;
 }
 
 .registration-form label {
-   font-family: "Roboto", sans-serif;
-   font-size: 12px;
-   color: #848080;
-   line-height: 1;
+  font-family: "Roboto", sans-serif;
+  font-size: 12px;
+  color: #848080;
+  line-height: 1;
+}
+
+.feedback-modal__error {
+  color: #e53e3e !important;
+  font-family: Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.feedback-modal__error--top {
+  margin-bottom: 8px;
+}
+
+.feedback-modal__error--bottom {
+  margin-top: 8px;
 }
 
 @media (max-width: 700px) {
-   .bin-modal-content {
-      width: 75vw;
-   }
+  .bin-modal-content {
+    width: 75vw;
+  }
 }
 
 /* Адаптивность */
 @media (max-width: 450px) {
-   .modal {
-      padding: 16px;
-   }
+  .modal {
+    padding: 16px;
+  }
 
-   .close {
-      top: 12px;
-      right: 12px;
-   }
+  .close {
+    top: 12px;
+    right: 12px;
+  }
 
-   .feedback__button {
-      padding: 10px 16px;
-      width: 100%;
-   }
+  .feedback__button {
+    padding: 10px 16px;
+    width: 100%;
+  }
 }
 
 @media (max-width: 360px) {
-   .bin-modal-content {
-      width: 84vw;
-   }
+  .bin-modal-content {
+    width: 84vw;
+  }
 }

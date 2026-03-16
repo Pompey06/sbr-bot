@@ -36,7 +36,17 @@
     "badModalDescription": "We want to improve! Tell us what can be done better.",
     "requestFeedback": "Rate the quality of the answer",
     "badFeedbackPromptText": "Sorry we could not answer your question. Please leave your contact details so our operators can reach out to you for assistance.",
-    "openRegistrationForm": "Fill out the form"
+    "openRegistrationForm": "Fill out the form",
+    "selectReasonPlaceholder": "Select a reason",
+    "selectReasonError": "Select a reason before submitting",
+    "fillFeedbackError": "Fill in the feedback field before submitting",
+    "reasons": {
+      "wrong_list": "Incorrect list",
+      "incorrect_answer": "Incorrect answer",
+      "irrelevant": "Irrelevant",
+      "incomplete_answer": "Incomplete answer",
+      "other": "Other"
+    }
   },
   "modal": {
     "close": "Close",

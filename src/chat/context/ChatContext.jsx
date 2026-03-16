@@ -1546,8 +1546,13 @@ const ChatProvider = ({ children }) => {
     // Возвращаем индекс бота (каждый второй индекс)
     return Math.floor(messageCount / 2) * 2 + 1;
   };
-  // UPDATED: фикс запроса на B-бэк (ChatContext.jsx)
-  const sendFeedback = async (messageId, rate, text) => {
+
+  const sendFeedback = async (
+    messageId,
+    rate,
+    text = "",
+    dislikeReason = "",
+  ) => {
     try {
       if (!messageId) {
         console.warn("sendFeedback: messageId отсутствует");
@@ -1559,6 +1564,7 @@ const ChatProvider = ({ children }) => {
           String(c.id) === String(currentChatId) ||
           (c.id === null && c === chats[0]),
       );
+
       if (!currentChat?.id) {
         console.warn("sendFeedback: нет session_id для текущего чата");
         return;
@@ -1573,12 +1579,19 @@ const ChatProvider = ({ children }) => {
         user_id: userId,
         feedback_type: feedbackType,
         feedback_text: text || "",
+        ...(feedbackType === "dislike" && dislikeReason
+          ? { dislike_reason: dislikeReason }
+          : {}),
       };
 
       console.log("➡️ Отправка фидбека:", {
         url: `${baseURL}/api/messages/${messageId}/feedback`,
+        messageId,
+        rate,
+        text,
+        dislikeReason,
         payload,
-      }); // UPDATED debug
+      });
 
       const response = await axios.post(
         `${baseURL}/api/messages/${messageId}/feedback`,
@@ -1593,6 +1606,7 @@ const ChatProvider = ({ children }) => {
       return response.data;
     } catch (error) {
       console.error("❌ Ошибка при отправке фидбека:", error);
+      throw error;
     }
   };
 

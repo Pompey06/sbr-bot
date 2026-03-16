@@ -36,7 +36,17 @@
     "badModalDescription": "Мы хотим стать лучше! Расскажите, что можно улучшить.",
     "requestFeedback": "Оцените качество ответа",
     "badFeedbackPromptText": "Извините, что не смогли ответить на ваш вопрос. Пожалуйста, оставьте Ваши данные, чтобы наши операторы могли связаться с Вами для консультации.",
-    "openRegistrationForm": "Заполнить форму"
+    "openRegistrationForm": "Заполнить форму",
+    "selectReasonPlaceholder": "Выберите причину",
+    "selectReasonError": "Выберите причину перед отправкой",
+    "fillFeedbackError": "Заполните поле отзыва перед отправкой",
+    "reasons": {
+      "wrong_list": "Неправильный список",
+      "incorrect_answer": "Неверный ответ",
+      "irrelevant": "Не по теме",
+      "incomplete_answer": "Неполный ответ",
+      "other": "Другое"
+    }
   },
   "modal": {
     "close": "Закрыть",

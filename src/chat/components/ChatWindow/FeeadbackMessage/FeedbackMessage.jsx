@@ -125,12 +125,12 @@ export default function FeedbackMessage({ messageIndex, messageId }) {
       setIsLiked(false);
     }
   };
-  const handleFeedbackSubmit = useCallback(
-    async (text) => {
+  const handleBadFeedbackSubmit = useCallback(
+    async (text = "", dislikeReason = "") => {
       if (isDisliked) return;
+
       try {
         setIsDisliked(true);
-        // Тут тоже оставляем UI-индекс для визуального состояния
         saveFeedbackState(currentChatId, messageIndex, "bad");
         setHideBadTooltip(true);
         closeModal();
@@ -140,6 +140,7 @@ export default function FeedbackMessage({ messageIndex, messageId }) {
             currentChatId,
             uiMessageIndex: messageIndex,
             storageIndex,
+            dislikeReason,
           });
 
           if (currentChatId && cacheMessageIdsFromHistory) {
@@ -153,19 +154,20 @@ export default function FeedbackMessage({ messageIndex, messageId }) {
                   currentChatId,
                   uiMessageIndex: messageIndex,
                   storageIndex,
+                  dislikeReason,
                 },
               );
               return;
             }
 
-            await sendFeedback(fallbackId, "bad", text);
+            await sendFeedback(fallbackId, "bad", text, dislikeReason);
             return;
           }
 
           return;
         }
 
-        await sendFeedback(resolvedMessageId, "bad", text);
+        await sendFeedback(resolvedMessageId, "bad", text, dislikeReason);
       } catch (error) {
         console.error("Ошибка при отправке дизлайка:", error);
         setIsDisliked(false);
@@ -237,7 +239,7 @@ export default function FeedbackMessage({ messageIndex, messageId }) {
         onClose={closeModal}
         title={t("feedback.goodModalTitle")}
         description={t("feedback.goodModalDescription")}
-        onSubmit={handleFeedbackSubmit}
+        onSubmit={handleGoodFeedback}
         feedbackType="good"
         messageIndex={selectedMessageIndex}
         messageId={messageId}
@@ -250,7 +252,7 @@ export default function FeedbackMessage({ messageIndex, messageId }) {
         onClose={closeModal}
         title={t("feedback.badModalTitle")}
         description={t("feedback.badModalDescription")}
-        onSubmit={handleFeedbackSubmit}
+        onSubmit={handleBadFeedbackSubmit}
         feedbackType="bad"
         messageIndex={selectedMessageIndex}
         messageId={messageId}
