@@ -28,13 +28,16 @@ export default function FeedbackModal({
   const dislikeReasonOptions = [
     { value: "wrong_list", label: t("feedback.reasons.wrong_list") },
     {
-      value: "incorrect_answer",
-      label: t("feedback.reasons.incorrect_answer"),
+      value: "wrong_quantity",
+      label: t("feedback.reasons.wrong_quantity"),
     },
-    { value: "irrelevant", label: t("feedback.reasons.irrelevant") },
     {
-      value: "incomplete_answer",
-      label: t("feedback.reasons.incomplete_answer"),
+      value: "breach_of_confidentiality",
+      label: t("feedback.reasons.breach_of_confidentiality"),
+    },
+    {
+      value: "wrong_nace",
+      label: t("feedback.reasons.wrong_nace"),
     },
     { value: "other", label: t("feedback.reasons.other") },
   ];
