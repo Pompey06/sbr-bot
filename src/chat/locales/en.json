@@ -39,13 +39,13 @@
     "openRegistrationForm": "Fill out the form",
     "selectReasonPlaceholder": "Select a reason",
     "selectReasonError": "Select a reason before submitting",
-    "fillFeedbackError": "Fill in the feedback field before submitting",
+    "fillFeedbackError": "Fill in all fields before submitting",
     "reasons": {
-      "wrong_list": "Incorrect list",
-      "incorrect_answer": "Incorrect answer",
-      "irrelevant": "Irrelevant",
-      "incomplete_answer": "Incomplete answer",
-      "other": "Other"
+      "wrong_list": "issued an incorrect list",
+      "wrong_quantity": "issued an incorrect quantity",
+      "breach_of_confidentiality": "breach of confidentiality",
+      "wrong_nace": "issued an incorrect NACE",
+      "other": "other (with a comment field)"
     }
   },
   "modal": {

@@ -39,13 +39,13 @@
     "openRegistrationForm": "Заполнить форму",
     "selectReasonPlaceholder": "Выберите причину",
     "selectReasonError": "Выберите причину перед отправкой",
-    "fillFeedbackError": "Заполните поле отзыва перед отправкой",
+    "fillFeedbackError": "Заполните все поля перед отправкой",
     "reasons": {
-      "wrong_list": "Неправильный список",
-      "incorrect_answer": "Неверный ответ",
-      "irrelevant": "Не по теме",
-      "incomplete_answer": "Неполный ответ",
-      "other": "Другое"
+      "wrong_list": "выдал неправильный перечень",
+      "wrong_quantity": "выдал неправильное количество",
+      "breach_of_confidentiality": "нарушение конфиденциальности",
+      "wrong_nace": "выдал неправильный ОКЭД",
+      "other": "другое (с полем для комментария)"
     }
   },
   "modal": {
@@ -119,7 +119,6 @@
     "preparing": "Идёт подготовка файла",
     "labelIndex": "Индекс"
   },
-
   "faq": {
     "button": "Часто задаваемые вопросы по базе данных ИС «СБР»",
     "title": "Часто задаваемые вопросы",
