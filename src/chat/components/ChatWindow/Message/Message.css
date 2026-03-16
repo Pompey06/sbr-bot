@@ -274,3 +274,18 @@
     font-size: 16px;
   }
 }
+
+
+.message--highlighted {
+  animation: message-highlight 1.8s ease;
+}
+
+@keyframes message-highlight {
+  0% {
+    background-color: rgba(59, 130, 246, 0.2);
+    border-radius: 12px;
+  }
+  100% {
+    background-color: transparent;
+  }
+}

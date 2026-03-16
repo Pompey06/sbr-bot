@@ -26,6 +26,8 @@ const ChatProvider = ({ children }) => {
   const [currentSubcategory, setCurrentSubcategory] = useState(null);
   const [inputPrefill, setInputPrefill] = useState("");
   const streamingIndexRef = useRef(null);
+  const streamAbortControllerRef = useRef(null);
+  const activeStreamingRef = useRef(null);
   const [isInBinFlow, setIsInBinFlow] = useState(false);
   const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
@@ -143,6 +145,7 @@ const ChatProvider = ({ children }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState(null);
   const [locale, setLocale] = useState("ru");
+  const [scrollToMessageId, setScrollToMessageId] = useState(null);
 
   useEffect(() => {
     setChats((prevChats) =>
@@ -237,6 +240,7 @@ const ChatProvider = ({ children }) => {
 
         return {
           text: m?.content ?? "",
+          messageId: m?.id || null,
           isUser: m?.role === "user",
           isFeedback: false,
           isButton: false,
@@ -739,7 +743,7 @@ const ChatProvider = ({ children }) => {
     console.log("🆕 Новый чат создан");
   };
 
-  const switchChat = async (chatId) => {
+  const switchChat = async (chatId, targetMessageId = null) => {
     setCurrentCategory(null);
     setCurrentSubcategory(null);
     setCategoryFilter(null);
@@ -773,6 +777,7 @@ const ChatProvider = ({ children }) => {
       }
 
       setCurrentChatId(chatId);
+      setScrollToMessageId(targetMessageId || null);
     } catch (error) {
       console.error("Error switching chat:", error);
     }
@@ -961,6 +966,7 @@ const ChatProvider = ({ children }) => {
         const updatedMsg = {
           ...prev[ci].messages[msgIdx],
           text: accumulatedText,
+          messageId: message_id || prev[ci].messages[msgIdx]?.messageId || null,
           streaming: false,
           isAssistantResponse: true,
           sqlQuery: sql_query || "",
@@ -1311,6 +1317,13 @@ const ChatProvider = ({ children }) => {
           return null;
         };
 
+        const abortController = new AbortController();
+        streamAbortControllerRef.current = abortController;
+        activeStreamingRef.current = {
+          sessionId,
+          accumulatedText: "",
+        };
+
         const response = await fetch(
           `${
             import.meta.env.VITE_API_URL_NEW || "http://172.16.17.4:8001"
@@ -1325,6 +1338,7 @@ const ChatProvider = ({ children }) => {
               language: mapLangForNewApi(locale),
               faq_id: findFaqIdByText(text) || null,
             }),
+            signal: abortController.signal,
           },
         );
         reader = response.body.getReader();
@@ -1362,6 +1376,9 @@ const ChatProvider = ({ children }) => {
                 : String(parsed.content || "");
 
             accumulatedText += chunkText;
+            if (activeStreamingRef.current) {
+              activeStreamingRef.current.accumulatedText = accumulatedText;
+            }
 
             setChats((prev) =>
               prev.map((chat) => {
@@ -1407,6 +1424,10 @@ const ChatProvider = ({ children }) => {
               sessionId ||
               currentChatId;
 
+            if (activeStreamingRef.current && sidFromResponse) {
+              activeStreamingRef.current.sessionId = sidFromResponse;
+            }
+
             // message_id: сначала из вложенного объекта, потом из корня
             const msgId = respObject.message_id || parsed.message_id || null;
 
@@ -1418,6 +1439,7 @@ const ChatProvider = ({ children }) => {
                 const updated = {
                   ...chat.messages[idx],
                   text: safeResponse,
+                  messageId: msgId || chat.messages[idx]?.messageId || null,
                   streaming: false,
                   chart: parsed.chart || respObject.chart || null,
                   excelFile: parsed.excel_file || respObject.excel_file || null,
@@ -1455,6 +1477,8 @@ const ChatProvider = ({ children }) => {
             );
           } else if (parsed.type === "end") {
             setIsTyping(false);
+            streamAbortControllerRef.current = null;
+            activeStreamingRef.current = null;
           }
         }
       }
@@ -1481,10 +1505,111 @@ const ChatProvider = ({ children }) => {
         }
       }
     } catch (err) {
-      console.error("Ошибка при мок-стриминге:", err);
+      if (err?.name === "AbortError") {
+        console.log("Стриминг остановлен пользователем");
+      } else {
+        console.error("Ошибка при мок-стриминге:", err);
+      }
       setIsTyping(false);
+      streamAbortControllerRef.current = null;
+      activeStreamingRef.current = null;
     }
   }
+
+
+  const stopStreaming = async () => {
+    const activeStream = activeStreamingRef.current;
+
+    if (!activeStream?.sessionId) {
+      return;
+    }
+
+    try {
+      if (streamAbortControllerRef.current) {
+        streamAbortControllerRef.current.abort();
+      }
+
+      const truncatedText = activeStream.accumulatedText || "";
+
+      setChats((prev) =>
+        prev.map((chat) => {
+          if (String(chat.id) !== String(activeStream.sessionId)) {
+            return chat;
+          }
+
+          const idx = chat.messages.findIndex((m) => m.streaming);
+          if (idx === -1) return chat;
+
+          const updated = {
+            ...chat.messages[idx],
+            text: truncatedText,
+            streaming: false,
+          };
+
+          const copy = [...chat.messages];
+          copy[idx] = updated;
+
+          return { ...chat, messages: copy };
+        }),
+      );
+
+      setIsTyping(false);
+
+      await apiNew.post(
+        "/api/chat/stop",
+        {
+          session_id: activeStream.sessionId,
+          user_id: userId,
+          truncate_at: truncatedText.length,
+          flags_seen: {
+            table_shown: false,
+            chart_shown: false,
+            excel_shown: false,
+          },
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+          withCredentials: false,
+        },
+      );
+    } catch (error) {
+      if (error?.name !== "AbortError" && error?.code !== "ERR_CANCELED") {
+        console.error("Ошибка остановки стриминга:", error);
+      }
+    } finally {
+      streamAbortControllerRef.current = null;
+      activeStreamingRef.current = null;
+    }
+  };
+
+
+  const searchMessages = async (query, options = {}) => {
+    const q = String(query || "").trim();
+    if (!q) return [];
+
+    const limit = options.limit || 50;
+    const days = options.days || 30;
+
+    try {
+      const { data } = await apiNew.get("/api/search", {
+        params: {
+          user_id: userId,
+          q,
+          limit,
+          days,
+        },
+      });
+
+      return Array.isArray(data?.hits) ? data.hits : [];
+    } catch (error) {
+      console.error("Ошибка поиска по чатам:", error);
+      return [];
+    }
+  };
+
+  const clearScrollToMessageId = () => {
+    setScrollToMessageId(null);
+  };
 
   const removeFeedbackMessage = (messageIndex) => {
     setChats((prevChats) =>
@@ -1675,7 +1800,15 @@ const ChatProvider = ({ children }) => {
         setIsTyping,
         createNewChat,
         switchChat,
+        searchMessages,
         createMessage,
+        stopStreaming,
+        isStreamingCurrentChat:
+          chats.find(
+            (c) =>
+              String(c.id) === String(currentChatId) ||
+              (c.id === null && c === chats[0]),
+          )?.messages?.some((m) => m.streaming) || false,
         handleButtonClick,
         sendFeedback,
         getBotMessageIndex,
@@ -1697,6 +1830,8 @@ const ChatProvider = ({ children }) => {
         isInBinFlow,
         setIsInBinFlow,
         cacheMessageIdsFromHistory,
+        scrollToMessageId,
+        clearScrollToMessageId,
       }}
     >
       {children}
