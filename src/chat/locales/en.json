@@ -59,7 +59,8 @@
     "sendIconAlt": "Send icon",
     "sentMessage": "Message sent",
     "text": "Our bot uses AI and is in testing stage. There may be inaccuracies in answers. If you encounter them, please let us know by filling out the feedback form.",
-    "textAlt": "The information is provided by a virtual assistant based on artificial intelligence in accordance with the data of the Statistical business register. The information provided is for informational purposes only and does not have legal force or the status of an official document. The chat-bot tries to ensure the accuracy of the data, however, it is recommended to double-check important information on the official website of the National Bureau of Statistics www.stat.gov.kz. If necessary, we recommend contacting the call center at 1446"
+    "textAlt": "The information is provided by a virtual assistant based on artificial intelligence in accordance with the data of the Statistical business register. The information provided is for informational purposes only and does not have legal force or the status of an official document. The chat-bot tries to ensure the accuracy of the data, however, it is recommended to double-check important information on the official website of the National Bureau of Statistics www.stat.gov.kz. If necessary, we recommend contacting the call center at 1446",
+    "stop": "Stop"
   },
   "chatError": {
     "errorMessage": "Sorry, an error occurred. Please rephrase your request."

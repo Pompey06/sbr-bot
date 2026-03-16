@@ -57,3 +57,18 @@
     padding: 10px 15px;
   }
 }
+
+
+.stop-button {
+  border-radius: 10px;
+  border: 1px solid #ced2db;
+  padding: 8px 14px;
+  font-size: 14px;
+  line-height: 1;
+  color: #141414;
+  background: #fff;
+}
+
+.stop-button:hover {
+  background: #f5f5f5;
+}
