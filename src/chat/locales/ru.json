@@ -21,7 +21,12 @@
     "previousChat": "Прошлый чат {{number}}",
     "warning": "Внимание: история запросов, старше 30 дней, автоматически очищается",
     "today": "Сегодня",
-    "yesterday": "Вчера"
+    "yesterday": "Вчера",
+    "searchButton": "Поиск по чатам",
+    "searchTitle": "Поиск по чатам",
+    "searchPlaceholder": "Введите текст для поиска...",
+    "searchNoResults": "Совпадений не найдено",
+    "searchLoading": "Идёт поиск..."
   },
   "feedback": {
     "good": "Хорошо",

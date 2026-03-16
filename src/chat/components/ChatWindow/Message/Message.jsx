@@ -35,6 +35,8 @@ export default function Message({
   rawData,
   isCustomMessage = false,
   isAssistantResponse = false,
+  messageId = null,
+  isHighlighted = false,
 }) {
   const { t, i18n } = useTranslation(undefined, { i18n: chatI18n });
   const [fileReadyMap, setFileReadyMap] = useState({});
@@ -316,10 +318,13 @@ export default function Message({
 
   return (
     <div
+      data-message-id={messageId || undefined}
       className={`message mb-6 flex font-light ${
         isUser
           ? "user text-right self-end text-white"
           : `self-start relative ${!isGreeting ? "bot-message-wrapper" : ""}`
+      } ${
+        isHighlighted ? "message--highlighted" : ""
       } ${
         isButton
           ? "cursor-pointer hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5"

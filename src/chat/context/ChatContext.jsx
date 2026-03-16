@@ -145,6 +145,7 @@ const ChatProvider = ({ children }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState(null);
   const [locale, setLocale] = useState("ru");
+  const [scrollToMessageId, setScrollToMessageId] = useState(null);
 
   useEffect(() => {
     setChats((prevChats) =>
@@ -239,6 +240,7 @@ const ChatProvider = ({ children }) => {
 
         return {
           text: m?.content ?? "",
+          messageId: m?.id || null,
           isUser: m?.role === "user",
           isFeedback: false,
           isButton: false,
@@ -741,7 +743,7 @@ const ChatProvider = ({ children }) => {
     console.log("🆕 Новый чат создан");
   };
 
-  const switchChat = async (chatId) => {
+  const switchChat = async (chatId, targetMessageId = null) => {
     setCurrentCategory(null);
     setCurrentSubcategory(null);
     setCategoryFilter(null);
@@ -775,6 +777,7 @@ const ChatProvider = ({ children }) => {
       }
 
       setCurrentChatId(chatId);
+      setScrollToMessageId(targetMessageId || null);
     } catch (error) {
       console.error("Error switching chat:", error);
     }
@@ -963,6 +966,7 @@ const ChatProvider = ({ children }) => {
         const updatedMsg = {
           ...prev[ci].messages[msgIdx],
           text: accumulatedText,
+          messageId: message_id || prev[ci].messages[msgIdx]?.messageId || null,
           streaming: false,
           isAssistantResponse: true,
           sqlQuery: sql_query || "",
@@ -1435,6 +1439,7 @@ const ChatProvider = ({ children }) => {
                 const updated = {
                   ...chat.messages[idx],
                   text: safeResponse,
+                  messageId: msgId || chat.messages[idx]?.messageId || null,
                   streaming: false,
                   chart: parsed.chart || respObject.chart || null,
                   excelFile: parsed.excel_file || respObject.excel_file || null,
@@ -1575,6 +1580,35 @@ const ChatProvider = ({ children }) => {
       streamAbortControllerRef.current = null;
       activeStreamingRef.current = null;
     }
+  };
+
+
+  const searchMessages = async (query, options = {}) => {
+    const q = String(query || "").trim();
+    if (!q) return [];
+
+    const limit = options.limit || 50;
+    const days = options.days || 30;
+
+    try {
+      const { data } = await apiNew.get("/api/search", {
+        params: {
+          user_id: userId,
+          q,
+          limit,
+          days,
+        },
+      });
+
+      return Array.isArray(data?.hits) ? data.hits : [];
+    } catch (error) {
+      console.error("Ошибка поиска по чатам:", error);
+      return [];
+    }
+  };
+
+  const clearScrollToMessageId = () => {
+    setScrollToMessageId(null);
   };
 
   const removeFeedbackMessage = (messageIndex) => {
@@ -1766,6 +1800,7 @@ const ChatProvider = ({ children }) => {
         setIsTyping,
         createNewChat,
         switchChat,
+        searchMessages,
         createMessage,
         stopStreaming,
         isStreamingCurrentChat:
@@ -1795,6 +1830,8 @@ const ChatProvider = ({ children }) => {
         isInBinFlow,
         setIsInBinFlow,
         cacheMessageIdsFromHistory,
+        scrollToMessageId,
+        clearScrollToMessageId,
       }}
     >
       {children}

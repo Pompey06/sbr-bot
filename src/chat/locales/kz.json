@@ -21,7 +21,12 @@
     "previousChat": "Алдыңғы чат {{number}}",
     "warning": "Назар аударыңыз: 30 күннен асқан сұраныстар тарихы автоматты түрде тазаланады",
     "today": "Бүгін",
-    "yesterday": "Кеше"
+    "yesterday": "Кеше",
+    "searchButton": "Чаттардан іздеу",
+    "searchTitle": "Чаттардан іздеу",
+    "searchPlaceholder": "Іздеу үшін мәтін енгізіңіз...",
+    "searchNoResults": "Сәйкестіктер табылмады",
+    "searchLoading": "Іздеу жүріп жатыр..."
   },
   "feedback": {
     "good": "Жақсы",

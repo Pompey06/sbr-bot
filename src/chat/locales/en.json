@@ -21,7 +21,12 @@
     "previousChat": "Previous chat {{number}}",
     "warning": "Attention: requests older than 30 days are automatically deleted",
     "today": "Today",
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "searchButton": "Search chats",
+    "searchTitle": "Search chats",
+    "searchPlaceholder": "Type to search in chats...",
+    "searchNoResults": "No matches found",
+    "searchLoading": "Searching..."
   },
   "feedback": {
     "good": "Good",
