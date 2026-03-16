@@ -41,11 +41,11 @@
     "selectReasonError": "Жіберер алдында себебін таңдаңыз",
     "fillFeedbackError": "Жіберер алдында пікір өрісін толтырыңыз",
     "reasons": {
-      "wrong_list": "Қате тізім",
-      "incorrect_answer": "Қате жауап",
-      "irrelevant": "Тақырыпқа сай емес",
-      "incomplete_answer": "Толық емес жауап",
-      "other": "Басқа"
+      "wrong_list": "қате тізім берді",
+      "wrong_quantity": "қате санды берді",
+      "breach_of_confidentiality": "құпиялылықты бұзу",
+      "wrong_nace": "дұрыс емес ЭҚЖЖ берді",
+      "other": "басқа (түсініктеме өрісі бар)"
     }
   },
   "modal": {
