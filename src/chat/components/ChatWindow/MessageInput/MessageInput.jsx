@@ -8,12 +8,18 @@ import chatI18n from "../../../i18n";
 
 export default function MessageInput() {
   const { t } = useTranslation(undefined, { i18n: chatI18n });
-  const { inputPrefill, setInputPrefill, createMessage } =
-    useContext(ChatContext);
+  const {
+    inputPrefill,
+    setInputPrefill,
+    createMessage,
+    stopStreaming,
+    isStreamingCurrentChat,
+  } = useContext(ChatContext);
   const [message, setMessage] = useState(inputPrefill);
   const useAltGreeting = import.meta.env.VITE_USE_ALT_GREETING === "true";
 
   const handleSend = async () => {
+    if (isStreamingCurrentChat) return;
     // Если нет сообщения, можно дополнительно сделать проверку, не отправлять пустую строку
     if (!message.trim()) return;
     createMessage(message);
@@ -28,7 +34,7 @@ export default function MessageInput() {
 
   const handleKeyDown = (e) => {
     // Проверяем, что нажата клавиша Enter
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !isStreamingCurrentChat) {
       handleSend();
     }
   };
@@ -46,13 +52,19 @@ export default function MessageInput() {
             className="flex-1 p-2 border rounded-lg"
           />
         </div>
-        <button onClick={handleSend} className="">
-          <img
-            className="send-icon"
-            src={sendIcon}
-            alt={t("messageInput.sendIconAlt")}
-          />
-        </button>
+        {isStreamingCurrentChat ? (
+          <button onClick={stopStreaming} className="stop-button" type="button">
+            {t("messageInput.stop")}
+          </button>
+        ) : (
+          <button onClick={handleSend} className="" type="button">
+            <img
+              className="send-icon"
+              src={sendIcon}
+              alt={t("messageInput.sendIconAlt")}
+            />
+          </button>
+        )}
       </div>
       <div className={`ai__text` + (useAltGreeting ? ` ai__text--alt` : ``)}>
         {t(useAltGreeting ? "messageInput.textAlt" : "messageInput.text")}

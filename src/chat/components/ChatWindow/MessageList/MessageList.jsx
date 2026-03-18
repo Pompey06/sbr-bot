@@ -19,6 +19,8 @@ export default function MessageList({ isSidebarOpen, toggleSidebar }) {
     isTyping,
     handleButtonClick,
     showInitialButtons,
+    scrollToMessageId,
+    clearScrollToMessageId,
   } = useContext(ChatContext);
 
   // Определяем текущий чат
@@ -29,11 +31,35 @@ export default function MessageList({ isSidebarOpen, toggleSidebar }) {
   const messages = currentChat?.messages || [];
 
   const scrollTargetRef = useRef(null);
+  const messageListRef = useRef(null);
+  const [highlightedMessageId, setHighlightedMessageId] = useState(null);
   useEffect(() => {
     if (scrollTargetRef.current) {
       scrollTargetRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+
+  useEffect(() => {
+    if (!scrollToMessageId || !messageListRef.current) return;
+
+    const escapedId = String(scrollToMessageId).replace(/"/g, '\\"');
+    const target = messageListRef.current.querySelector(
+      `[data-message-id="${escapedId}"]`,
+    );
+
+    if (!target) return;
+
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightedMessageId(scrollToMessageId);
+
+    const timeoutId = setTimeout(() => {
+      setHighlightedMessageId(null);
+      clearScrollToMessageId();
+    }, 2000);
+
+    return () => clearTimeout(timeoutId);
+  }, [scrollToMessageId, messages, clearScrollToMessageId]);
 
   const useWindowWidth = () => {
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -105,6 +131,8 @@ export default function MessageList({ isSidebarOpen, toggleSidebar }) {
         showTable={message.showTable || false}
         tableColumns={message.tableColumns || []}
         rawData={message.rawData || []}
+        messageId={message.messageId || null}
+        isHighlighted={message.messageId && message.messageId === highlightedMessageId}
       >
         {/* Текст для начальных категорий */}
         {index === 0 && showInitialButtons && (
@@ -138,7 +166,7 @@ export default function MessageList({ isSidebarOpen, toggleSidebar }) {
         <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
       )}
       <div className="overflow-y-auto message-list-wrap">
-        <div className="message-list justify-end flex flex-col">
+        <div ref={messageListRef} className="message-list justify-end flex flex-col">
           {renderedMessages}
           {isTyping && <TypingIndicator text={t("chatTyping.typingMessage")} />}
           <div ref={scrollTargetRef}></div>

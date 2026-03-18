@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { ChatContext } from "../../context/ChatContext";
 import chatI18n from "../../i18n";
 import DeleteChatModal from "../ChatWindow/Modal/DeleteChatModal";
+import SearchChatsModal from "../ChatWindow/Modal/SearchChatsModal";
 
 export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
   const { t, i18n } = useTranslation(undefined, { i18n: chatI18n });
@@ -22,6 +23,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
     switchChat,
     deleteChat,
     updateLocale,
+    searchMessages,
   } = useContext(ChatContext);
 
   useEffect(() => {
@@ -49,6 +51,18 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
     if (isMobile) toggleSidebar();
   };
 
+
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const openSearchModal = () => setIsSearchOpen(true);
+  const closeSearchModal = () => setIsSearchOpen(false);
+
+  const handleSearchSelect = async (hit) => {
+    if (!hit?.session_id) return;
+    await switchChat(hit.session_id, hit.message_id || null);
+    closeSearchModal();
+    if (isMobile) toggleSidebar();
+  };
+
   return (
     <div
       className={`sidebar overflow-hidden flex xl:p-8 flex-col ${
@@ -69,6 +83,14 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
       </div>
 
       <div className="sidebar__buttons flex flex-col gap-2.5 mt-16">
+        <SidebarButton
+          key="search-chats"
+          text={t("sidebar.searchButton")}
+          icon={<span className="text-lg leading-none">🔎</span>}
+          onClick={openSearchModal}
+          className="bg-white"
+        />
+
         <SidebarButton
           key="new-chat"
           text={t("sidebar.newChat")}
@@ -168,6 +190,13 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
         isOpen={!!chatToDelete}
         onClose={closeDeleteModal}
         onConfirm={confirmDeleteChat}
+      />
+
+      <SearchChatsModal
+        isOpen={isSearchOpen}
+        onClose={closeSearchModal}
+        onSearch={searchMessages}
+        onSelect={handleSearchSelect}
       />
 
       <div className="mt-4 sidebar__warning p-3 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 text-sm leading-tight rounded-r shadow-sm">
