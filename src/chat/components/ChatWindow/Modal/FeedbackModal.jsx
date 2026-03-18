@@ -13,9 +13,6 @@ export default function FeedbackModal({
   description,
   onSubmit,
   feedbackType, // "good" | "bad"
-  messageId,
-  sessionId,
-  userId,
 }) {
   const { t } = useTranslation(undefined, { i18n: chatI18n });
 
