@@ -48,8 +48,8 @@
     "reasons": {
       "wrong_list": "қате тізім берді",
       "wrong_quantity": "қате санды берді",
-      "breach_of_confidentiality": "құпиялылықты бұзу",
-      "wrong_nace": "дұрыс емес ЭҚЖЖ берді",
+      "confidentiality_issue": "құпиялылықты бұзу",
+      "wrong_classifier": "дұрыс емес ЭҚЖЖ берді",
       "other": "басқа (түсініктеме өрісі бар)"
     }
   },

@@ -48,8 +48,8 @@
     "reasons": {
       "wrong_list": "issued an incorrect list",
       "wrong_quantity": "issued an incorrect quantity",
-      "breach_of_confidentiality": "breach of confidentiality",
-      "wrong_nace": "issued an incorrect NACE",
+      "confidentiality_issue": "breach of confidentiality",
+      "wrong_classifier": "issued an incorrect NACE",
       "other": "other (with a comment field)"
     }
   },

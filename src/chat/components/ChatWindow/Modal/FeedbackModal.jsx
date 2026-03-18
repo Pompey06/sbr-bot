@@ -33,11 +33,11 @@ export default function FeedbackModal({
     },
     {
       value: "confidentiality_issue",
-      label: t("feedback.reasons.breach_of_confidentiality"),
+      label: t("feedback.reasons.confidentiality_issue"),
     },
     {
       value: "wrong_classifier",
-      label: t("feedback.reasons.wrong_nace"),
+      label: t("feedback.reasons.wrong_classifier"),
     },
     { value: "other", label: t("feedback.reasons.other") },
   ];
