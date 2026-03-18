@@ -13,7 +13,8 @@
   background-color: rgb(209 213 219 / var(--tw-bg-opacity, 1));
 }
 
-.sidebar__button:first-child {
+.sidebar__button:first-child,
+.sidebar__buttons > .sidebar__button:nth-child(2) {
   color: #0068bf;
   border-bottom: 1px solid #0068bf;
   position: relative;
