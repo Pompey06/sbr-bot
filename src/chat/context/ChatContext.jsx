@@ -591,12 +591,22 @@ const ChatProvider = ({ children }) => {
     // 3) Бэкенд: DELETE /api/sessions/{session_id}
     try {
       await apiNew.delete(`/api/sessions/${chatId}`, {
-        headers: { Accept: "application/json" },
         withCredentials: false,
       });
     } catch (e) {
+      const isCorsLikeNetworkError =
+        axios.isAxiosError(e) && e.code === "ERR_NETWORK";
+
+      if (isCorsLikeNetworkError) {
+        console.warn(
+          "Delete response is blocked by CORS, keeping optimistic delete in UI:",
+          e,
+        );
+        return;
+      }
+
       console.error("Backend delete failed, rolling back:", e);
-      // если упало — откатываем локально
+      // если упало по реальной причине — откатываем локально
       setChats(prev);
     }
   }
