@@ -1608,13 +1608,80 @@ const ChatProvider = ({ children }) => {
 
       setIsTyping(false);
 
-      if (stopPayload?.message_id) {
+      if (!stopPayload) {
+        return;
+      }
+
+      if (!stopPayload.message_id) {
+        try {
+          const { data } = await apiNew.get(
+            `/api/sessions/${activeStream.sessionId}/history`,
+            {
+              params: { limit: 50 },
+              withCredentials: false,
+            },
+          );
+
+          const assistantMessages = (data?.messages || []).filter(
+            (message) => message?.role === "assistant" && message?.id,
+          );
+
+          const matchedMessage = [...assistantMessages]
+            .reverse()
+            .find((message) => {
+              const content = String(message?.content || "");
+
+              if (!truncatedText) return true;
+
+              return (
+                content.startsWith(truncatedText) ||
+                truncatedText.startsWith(content)
+              );
+            });
+
+          if (matchedMessage?.id) {
+            stopPayload.message_id = matchedMessage.id;
+
+            setChats((prev) =>
+              prev.map((chat) => {
+                if (String(chat.id) !== String(activeStream.sessionId)) {
+                  return chat;
+                }
+
+                const idx = chat.messages.findIndex(
+                  (message) =>
+                    !message.isUser &&
+                    !message.isFeedback &&
+                    String(message.text || "") === String(truncatedText),
+                );
+
+                if (idx === -1) return chat;
+
+                const copy = [...chat.messages];
+                copy[idx] = {
+                  ...copy[idx],
+                  messageId: matchedMessage.id,
+                };
+
+                return { ...chat, messages: copy };
+              }),
+            );
+          }
+        } catch (historyError) {
+          console.error(
+            "stopStreaming: failed to resolve message_id from history",
+            historyError,
+          );
+        }
+      }
+
+      if (stopPayload.message_id) {
         await apiNew.post("/api/chat/stop", stopPayload, {
           headers: { "Content-Type": "application/json" },
           withCredentials: false,
         });
       } else {
-        console.warn("stopStreaming: message_id not found, /api/chat/stop skipped", {
+        console.warn("stopStreaming: message_id not found for /api/chat/stop", {
           session_id: activeStream.sessionId,
         });
       }
