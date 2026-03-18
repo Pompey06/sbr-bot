@@ -58,11 +58,12 @@ export default function FeedbackModal({
 
     if (feedbackType === "bad") {
       const isReasonEmpty = selectedReason.trim() === "";
+      const isFeedbackEmpty = feedback.trim() === "";
 
       setIsReasonError(isReasonEmpty);
-      setIsError(false);
+      setIsError(isFeedbackEmpty);
 
-      if (isReasonEmpty) {
+      if (isReasonEmpty || isFeedbackEmpty) {
         return;
       }
     }
@@ -142,7 +143,7 @@ export default function FeedbackModal({
             ))}
           </select>
 
-          {isReasonError && (
+          {(isError || isReasonError) && (
             <p className="text-sm text-red-500">{t("feedback.fillFeedbackError")}</p>
           )}
         </div>
