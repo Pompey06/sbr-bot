@@ -28,13 +28,16 @@ export default function FeedbackModal({
   const dislikeReasonOptions = [
     { value: "wrong_list", label: t("feedback.reasons.wrong_list") },
     {
-      value: "incorrect_answer",
-      label: t("feedback.reasons.incorrect_answer"),
+      value: "wrong_quantity",
+      label: t("feedback.reasons.wrong_quantity"),
     },
-    { value: "irrelevant", label: t("feedback.reasons.irrelevant") },
     {
-      value: "incomplete_answer",
-      label: t("feedback.reasons.incomplete_answer"),
+      value: "confidentiality_issue",
+      label: t("feedback.reasons.confidentiality_issue"),
+    },
+    {
+      value: "wrong_classifier",
+      label: t("feedback.reasons.wrong_classifier"),
     },
     { value: "other", label: t("feedback.reasons.other") },
   ];
@@ -56,14 +59,16 @@ export default function FeedbackModal({
   const handleSubmit = async () => {
     if (isSubmitting) return;
 
-    if (feedbackType === "bad" && selectedReason.trim() === "") {
-      setIsReasonError(true);
-      return;
-    }
+    if (feedbackType === "bad") {
+      const isReasonEmpty = selectedReason.trim() === "";
+      const isFeedbackEmpty = feedback.trim() === "";
 
-    if (feedbackType === "bad" && feedback.trim() === "") {
-      setIsError(true);
-      return;
+      setIsReasonError(isReasonEmpty);
+      setIsError(isFeedbackEmpty);
+
+      if (isReasonEmpty || isFeedbackEmpty) {
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -140,9 +145,12 @@ export default function FeedbackModal({
               </option>
             ))}
           </select>
+
+          {(isError || isReasonError) && (
+            <p className="text-sm text-red-500">{t("feedback.fillFeedbackError")}</p>
+          )}
         </div>
       )}
-
 
       <div className="mt-6 flex justify-end">
         <button
