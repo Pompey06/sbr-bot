@@ -48,7 +48,7 @@ export default function SearchChatsModal({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t("sidebar.searchPlaceholder")}
-          className="w-full h-[44px] px-4 rounded-[12px] border border-[#D9D9D9] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-[44px] px-4 rounded-[12px] border border-[#D9D9D9]! focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
         {isLoading && (
