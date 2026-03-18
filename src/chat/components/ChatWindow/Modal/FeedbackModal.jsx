@@ -147,7 +147,7 @@ export default function FeedbackModal({
           </select>
 
           {(isError || isReasonError) && (
-            <p className="text-sm text-red-500">{t("feedback.fillFeedbackError")}</p>
+            <p className="text-sm text-red-500!">{t("feedback.fillFeedbackError")}</p>
           )}
         </div>
       )}
