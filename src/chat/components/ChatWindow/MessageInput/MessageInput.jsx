@@ -16,6 +16,7 @@ export default function MessageInput() {
     isStreamingCurrentChat,
   } = useContext(ChatContext);
   const [message, setMessage] = useState(inputPrefill);
+  const [hideStopTooltip, setHideStopTooltip] = useState(true);
   const useAltGreeting = import.meta.env.VITE_USE_ALT_GREETING === "true";
 
   const handleSend = async () => {
@@ -53,8 +54,23 @@ export default function MessageInput() {
           />
         </div>
         {isStreamingCurrentChat ? (
-          <button onClick={stopStreaming} className="stop-button" type="button">
-            {t("messageInput.stop")}
+          <button
+            onClick={() => {
+              setHideStopTooltip(true);
+              stopStreaming();
+            }}
+            className={`stop-button ${hideStopTooltip ? "tooltip-hide" : ""}`}
+            type="button"
+            aria-label={t("messageInput.stop")}
+            onMouseEnter={() => setHideStopTooltip(false)}
+            onMouseLeave={() => setHideStopTooltip(true)}
+            onFocus={() => setHideStopTooltip(false)}
+            onBlur={() => setHideStopTooltip(true)}
+          >
+            <span className="stop-button__icon" aria-hidden="true">
+              <span className="stop-button__icon-square" />
+            </span>
+            <span className="tooltip">{t("messageInput.stop")}</span>
           </button>
         ) : (
           <button onClick={handleSend} className="" type="button">
