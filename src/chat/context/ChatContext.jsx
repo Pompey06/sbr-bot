@@ -1560,10 +1560,6 @@ const ChatProvider = ({ children }) => {
     }
 
     try {
-      if (streamAbortControllerRef.current) {
-        streamAbortControllerRef.current.abort();
-      }
-
       const truncatedText = activeStream.accumulatedText || "";
       let stopPayload = null;
 
@@ -1577,25 +1573,30 @@ const ChatProvider = ({ children }) => {
           if (idx === -1) return chat;
 
           const currentMessage = chat.messages[idx];
+          const messageId = activeStream.messageId || currentMessage?.messageId || null;
+          const flagsSeen = {
+            table_shown:
+              activeStream.flagsSeen?.table_shown || currentMessage?.showTable || false,
+            chart_shown:
+              activeStream.flagsSeen?.chart_shown || !!currentMessage?.chart,
+            excel_shown:
+              activeStream.flagsSeen?.excel_shown || currentMessage?.hasExcel || false,
+          };
+
           stopPayload = {
             session_id: activeStream.sessionId,
-            message_id: activeStream.messageId || currentMessage?.messageId || null,
+            message_id: messageId,
             truncate_at: truncatedText.length,
-            flags_seen: {
-              table_shown:
-                activeStream.flagsSeen?.table_shown || currentMessage?.showTable || false,
-              chart_shown:
-                activeStream.flagsSeen?.chart_shown || !!currentMessage?.chart,
-              excel_shown:
-                activeStream.flagsSeen?.excel_shown || currentMessage?.hasExcel || false,
-            },
+            flags_seen: flagsSeen,
           };
+
+          activeStream.messageId = messageId;
+          activeStream.flagsSeen = flagsSeen;
 
           const updated = {
             ...currentMessage,
             text: truncatedText,
-            messageId:
-              activeStream.messageId || currentMessage?.messageId || null,
+            messageId,
             streaming: false,
           };
 
@@ -1612,78 +1613,13 @@ const ChatProvider = ({ children }) => {
         return;
       }
 
-      if (!stopPayload.message_id) {
-        try {
-          const { data } = await apiNew.get(
-            `/api/sessions/${activeStream.sessionId}/history`,
-            {
-              params: { limit: 50 },
-              withCredentials: false,
-            },
-          );
+      await apiNew.post("/api/chat/stop", stopPayload, {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: false,
+      });
 
-          const assistantMessages = (data?.messages || []).filter(
-            (message) => message?.role === "assistant" && message?.id,
-          );
-
-          const matchedMessage = [...assistantMessages]
-            .reverse()
-            .find((message) => {
-              const content = String(message?.content || "");
-
-              if (!truncatedText) return true;
-
-              return (
-                content.startsWith(truncatedText) ||
-                truncatedText.startsWith(content)
-              );
-            });
-
-          if (matchedMessage?.id) {
-            stopPayload.message_id = matchedMessage.id;
-
-            setChats((prev) =>
-              prev.map((chat) => {
-                if (String(chat.id) !== String(activeStream.sessionId)) {
-                  return chat;
-                }
-
-                const idx = chat.messages.findIndex(
-                  (message) =>
-                    !message.isUser &&
-                    !message.isFeedback &&
-                    String(message.text || "") === String(truncatedText),
-                );
-
-                if (idx === -1) return chat;
-
-                const copy = [...chat.messages];
-                copy[idx] = {
-                  ...copy[idx],
-                  messageId: matchedMessage.id,
-                };
-
-                return { ...chat, messages: copy };
-              }),
-            );
-          }
-        } catch (historyError) {
-          console.error(
-            "stopStreaming: failed to resolve message_id from history",
-            historyError,
-          );
-        }
-      }
-
-      if (stopPayload.message_id) {
-        await apiNew.post("/api/chat/stop", stopPayload, {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: false,
-        });
-      } else {
-        console.warn("stopStreaming: message_id not found for /api/chat/stop", {
-          session_id: activeStream.sessionId,
-        });
+      if (streamAbortControllerRef.current) {
+        streamAbortControllerRef.current.abort();
       }
     } catch (error) {
       if (error?.name !== "AbortError" && error?.code !== "ERR_CANCELED") {
