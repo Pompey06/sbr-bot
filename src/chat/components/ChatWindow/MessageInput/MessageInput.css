@@ -115,15 +115,15 @@
   transform: translateX(-50%);
   margin-top: 6px;
   background-color: #ffffff;
-  border: 1px solid #d1e5ff;
+  border: 1px solid #8abcf0;
   border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 104, 191, 0.12);
+  box-shadow: 0 10px 24px rgba(0, 104, 191, 0.22);
   color: #0068bf;
   font-size: 12px;
   line-height: 1.2;
   white-space: nowrap;
   padding: 4px 8px;
-  z-index: 10;
+  z-index: 30;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
