@@ -1331,7 +1331,13 @@ const ChatProvider = ({ children }) => {
         streamAbortControllerRef.current = abortController;
         activeStreamingRef.current = {
           sessionId,
+          messageId: null,
           accumulatedText: "",
+          flagsSeen: {
+            table_shown: false,
+            chart_shown: false,
+            excel_shown: false,
+          },
         };
 
         const response = await fetch(
@@ -1376,6 +1382,10 @@ const ChatProvider = ({ children }) => {
           const json = line.slice(5).trim();
           if (!json) continue;
           const parsed = JSON.parse(json);
+
+          if (activeStreamingRef.current && parsed?.message_id) {
+            activeStreamingRef.current.messageId = parsed.message_id;
+          }
 
           if (parsed.type === "text") {
             const chunkText =
@@ -1440,6 +1450,21 @@ const ChatProvider = ({ children }) => {
 
             // message_id: сначала из вложенного объекта, потом из корня
             const msgId = respObject.message_id || parsed.message_id || null;
+
+            if (activeStreamingRef.current) {
+              activeStreamingRef.current.messageId = msgId;
+              activeStreamingRef.current.flagsSeen = {
+                table_shown:
+                  parsed.show_table ||
+                  respObject.show_table ||
+                  false,
+                chart_shown: !!(parsed.chart || respObject.chart),
+                excel_shown:
+                  parsed.has_excel ||
+                  respObject.has_excel ||
+                  !!(parsed.excel_file || respObject.excel_file),
+              };
+            }
 
             setChats((prev) =>
               prev.map((chat) => {
@@ -1540,6 +1565,7 @@ const ChatProvider = ({ children }) => {
       }
 
       const truncatedText = activeStream.accumulatedText || "";
+      let stopPayload = null;
 
       setChats((prev) =>
         prev.map((chat) => {
@@ -1550,9 +1576,26 @@ const ChatProvider = ({ children }) => {
           const idx = chat.messages.findIndex((m) => m.streaming);
           if (idx === -1) return chat;
 
+          const currentMessage = chat.messages[idx];
+          stopPayload = {
+            session_id: activeStream.sessionId,
+            message_id: activeStream.messageId || currentMessage?.messageId || null,
+            truncate_at: truncatedText.length,
+            flags_seen: {
+              table_shown:
+                activeStream.flagsSeen?.table_shown || currentMessage?.showTable || false,
+              chart_shown:
+                activeStream.flagsSeen?.chart_shown || !!currentMessage?.chart,
+              excel_shown:
+                activeStream.flagsSeen?.excel_shown || currentMessage?.hasExcel || false,
+            },
+          };
+
           const updated = {
-            ...chat.messages[idx],
+            ...currentMessage,
             text: truncatedText,
+            messageId:
+              activeStream.messageId || currentMessage?.messageId || null,
             streaming: false,
           };
 
@@ -1565,23 +1608,83 @@ const ChatProvider = ({ children }) => {
 
       setIsTyping(false);
 
-      await apiNew.post(
-        "/api/chat/stop",
-        {
-          session_id: activeStream.sessionId,
-          user_id: userId,
-          truncate_at: truncatedText.length,
-          flags_seen: {
-            table_shown: false,
-            chart_shown: false,
-            excel_shown: false,
-          },
-        },
-        {
+      if (!stopPayload) {
+        return;
+      }
+
+      if (!stopPayload.message_id) {
+        try {
+          const { data } = await apiNew.get(
+            `/api/sessions/${activeStream.sessionId}/history`,
+            {
+              params: { limit: 50 },
+              withCredentials: false,
+            },
+          );
+
+          const assistantMessages = (data?.messages || []).filter(
+            (message) => message?.role === "assistant" && message?.id,
+          );
+
+          const matchedMessage = [...assistantMessages]
+            .reverse()
+            .find((message) => {
+              const content = String(message?.content || "");
+
+              if (!truncatedText) return true;
+
+              return (
+                content.startsWith(truncatedText) ||
+                truncatedText.startsWith(content)
+              );
+            });
+
+          if (matchedMessage?.id) {
+            stopPayload.message_id = matchedMessage.id;
+
+            setChats((prev) =>
+              prev.map((chat) => {
+                if (String(chat.id) !== String(activeStream.sessionId)) {
+                  return chat;
+                }
+
+                const idx = chat.messages.findIndex(
+                  (message) =>
+                    !message.isUser &&
+                    !message.isFeedback &&
+                    String(message.text || "") === String(truncatedText),
+                );
+
+                if (idx === -1) return chat;
+
+                const copy = [...chat.messages];
+                copy[idx] = {
+                  ...copy[idx],
+                  messageId: matchedMessage.id,
+                };
+
+                return { ...chat, messages: copy };
+              }),
+            );
+          }
+        } catch (historyError) {
+          console.error(
+            "stopStreaming: failed to resolve message_id from history",
+            historyError,
+          );
+        }
+      }
+
+      if (stopPayload.message_id) {
+        await apiNew.post("/api/chat/stop", stopPayload, {
           headers: { "Content-Type": "application/json" },
           withCredentials: false,
-        },
-      );
+        });
+      } else {
+        console.warn("stopStreaming: message_id not found for /api/chat/stop", {
+          session_id: activeStream.sessionId,
+        });
+      }
     } catch (error) {
       if (error?.name !== "AbortError" && error?.code !== "ERR_CANCELED") {
         console.error("Ошибка остановки стриминга:", error);
