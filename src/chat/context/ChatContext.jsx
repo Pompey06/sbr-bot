@@ -1621,6 +1621,10 @@ const ChatProvider = ({ children }) => {
       if (streamAbortControllerRef.current) {
         streamAbortControllerRef.current.abort();
       }
+
+      if (streamAbortControllerRef.current) {
+        streamAbortControllerRef.current.abort();
+      }
     } catch (error) {
       if (error?.name !== "AbortError" && error?.code !== "ERR_CANCELED") {
         console.error("Ошибка остановки стриминга:", error);
