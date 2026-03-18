@@ -13,9 +13,6 @@ export default function FeedbackModal({
   description,
   onSubmit,
   feedbackType, // "good" | "bad"
-  messageId,
-  sessionId,
-  userId,
 }) {
   const { t } = useTranslation(undefined, { i18n: chatI18n });
 
@@ -61,12 +58,11 @@ export default function FeedbackModal({
 
     if (feedbackType === "bad") {
       const isReasonEmpty = selectedReason.trim() === "";
-      const isFeedbackEmpty = feedback.trim() === "";
 
       setIsReasonError(isReasonEmpty);
-      setIsError(isFeedbackEmpty);
+      setIsError(false);
 
-      if (isReasonEmpty || isFeedbackEmpty) {
+      if (isReasonEmpty) {
         return;
       }
     }
@@ -146,7 +142,7 @@ export default function FeedbackModal({
             ))}
           </select>
 
-          {(isError || isReasonError) && (
+          {isReasonError && (
             <p className="text-sm text-red-500">{t("feedback.fillFeedbackError")}</p>
           )}
         </div>
