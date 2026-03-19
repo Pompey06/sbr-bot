@@ -1886,6 +1886,7 @@ const ChatProvider = ({ children }) => {
     rate,
     text = "",
     dislikeReason = "",
+    sessionIdOverride = null,
   ) => {
     try {
       if (!messageId) {
@@ -1899,7 +1900,9 @@ const ChatProvider = ({ children }) => {
           (c.id === null && c === chats[0]),
       );
 
-      if (!currentChat?.id) {
+      const resolvedSessionId = sessionIdOverride || currentChat?.id || null;
+
+      if (!resolvedSessionId) {
         console.warn("sendFeedback: нет session_id для текущего чата");
         return;
       }
@@ -1909,7 +1912,7 @@ const ChatProvider = ({ children }) => {
       const feedbackType = rate === "good" ? "like" : "dislike";
 
       const payload = {
-        session_id: currentChat.id,
+        session_id: resolvedSessionId,
         user_id: userId,
         feedback_type: feedbackType,
         feedback_text: text || "",
