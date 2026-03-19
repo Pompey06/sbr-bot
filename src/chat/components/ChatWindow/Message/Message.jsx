@@ -685,7 +685,10 @@ export default function Message({
                 {/* Тултип ВСЕГДА есть в DOM, но CSS контролирует видимость */}
                 <span className="tooltip">{t("copyButton.copy")}</span>
               </button>
-              <FeedbackMessage messageIndex={botMessageIndex} />
+              <FeedbackMessage
+                messageIndex={botMessageIndex}
+                messageId={messageId}
+              />
             </div>
           )}
       </div>

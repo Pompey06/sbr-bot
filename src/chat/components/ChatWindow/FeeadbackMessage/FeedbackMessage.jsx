@@ -39,6 +39,7 @@ export default function FeedbackMessage({ messageIndex, messageId }) {
   const resolvedMessageId =
     messageId ||
     (currentChatId ? getMessageIdByIndex(currentChatId, storageIndex) : null);
+  const resolvedSessionId = currentChatId || null;
 
   useEffect(() => {
     const storedType =
@@ -103,7 +104,7 @@ export default function FeedbackMessage({ messageIndex, messageId }) {
             currentChatId,
             storageIndex,
           });
-          await sendFeedback(fallbackId, "good", "");
+          await sendFeedback(fallbackId, "good", "", "", resolvedSessionId);
           console.log("✅ Feedback successfully sent (fallback)");
           return;
         }
@@ -117,7 +118,13 @@ export default function FeedbackMessage({ messageIndex, messageId }) {
         storageIndex,
       });
 
-      await sendFeedback(resolvedMessageId, "good", "");
+      await sendFeedback(
+        resolvedMessageId,
+        "good",
+        "",
+        "",
+        resolvedSessionId,
+      );
 
       console.log("✅ Feedback successfully sent");
     } catch (error) {
@@ -160,14 +167,26 @@ export default function FeedbackMessage({ messageIndex, messageId }) {
               return;
             }
 
-            await sendFeedback(fallbackId, "bad", text, dislikeReason);
+            await sendFeedback(
+              fallbackId,
+              "bad",
+              text,
+              dislikeReason,
+              resolvedSessionId,
+            );
             return;
           }
 
           return;
         }
 
-        await sendFeedback(resolvedMessageId, "bad", text, dislikeReason);
+        await sendFeedback(
+          resolvedMessageId,
+          "bad",
+          text,
+          dislikeReason,
+          resolvedSessionId,
+        );
       } catch (error) {
         console.error("Ошибка при отправке дизлайка:", error);
         setIsDisliked(false);
@@ -178,6 +197,7 @@ export default function FeedbackMessage({ messageIndex, messageId }) {
       currentChatId,
       messageIndex,
       resolvedMessageId,
+      resolvedSessionId,
       isDisliked,
       cacheMessageIdsFromHistory,
       storageIndex,

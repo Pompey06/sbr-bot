@@ -1377,70 +1377,22 @@ const ChatProvider = ({ children }) => {
       let lastSessionForSave = null;
       let lastMessageIdForSave = null;
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
+      const processParsedChunk = (parsed) => {
+        if (parsed.type === "metadata") {
+          const metadataSessionId =
+            parsed.session_id ||
+            activeStreamingRef.current?.sessionId ||
+            sessionId;
 
-        // Новый парсер: режем по каждому "data:" даже если backend склеил события
-        const chunks = buffer.split(/(?=data:\s*)/);
+          const metadataMessageId = parsed.message_id || null;
 
-        // Последний кусок может быть незавершённым — оставляем его в buffer
-        buffer = chunks.pop() || "";
-
-        for (const rawChunk of chunks) {
-          const line = rawChunk.trim();
-          if (!line.startsWith("data:")) continue;
-
-          const json = line.slice(5).trim();
-          if (!json) continue;
-
-          let parsed;
-          try {
-            parsed = JSON.parse(json);
-          } catch (parseError) {
-            console.warn("Не удалось распарсить SSE chunk:", line, parseError);
-            continue;
+          if (activeStreamingRef.current) {
+            activeStreamingRef.current.sessionId = metadataSessionId;
+            activeStreamingRef.current.messageId = metadataMessageId;
           }
 
-          const tail = buffer.trim();
-          if (tail.startsWith("data:")) {
-            const json = tail.slice(5).trim();
-
-            if (json) {
-              try {
-                const parsed = JSON.parse(json);
-
-                if (parsed.type === "end") {
-                  setIsTyping(false);
-                  streamAbortControllerRef.current = null;
-                  activeStreamingRef.current = null;
-                }
-              } catch (parseError) {
-                console.warn(
-                  "Не удалось распарсить tail SSE chunk:",
-                  tail,
-                  parseError,
-                );
-              }
-            }
-          }
-
-          if (parsed.type === "metadata") {
-            const metadataSessionId =
-              parsed.session_id ||
-              activeStreamingRef.current?.sessionId ||
-              sessionId;
-
-            const metadataMessageId = parsed.message_id || null;
-
-            if (activeStreamingRef.current) {
-              activeStreamingRef.current.sessionId = metadataSessionId;
-              activeStreamingRef.current.messageId = metadataMessageId;
-            }
-
-            continue;
-          }
+          return;
+        }
 
           if (parsed.type === "text") {
             const chunkText =
@@ -1658,7 +1610,45 @@ const ChatProvider = ({ children }) => {
             streamAbortControllerRef.current = null;
             activeStreamingRef.current = null;
           }
+      };
+
+      const flushBufferedEvents = (flushRemainder = false) => {
+        const normalizedBuffer = buffer.replace(/\r\n/g, "\n");
+        const lines = normalizedBuffer.split("\n");
+
+        if (!flushRemainder) {
+          buffer = lines.pop() || "";
+        } else {
+          buffer = "";
         }
+
+        lines
+          .map((line) => line.trim())
+          .filter((line) => line.startsWith("data:"))
+          .forEach((line) => {
+            const json = line.slice(5).trim();
+            if (!json) return;
+
+            try {
+              const parsed = JSON.parse(json);
+              processParsedChunk(parsed);
+            } catch (parseError) {
+              console.warn("Не удалось распарсить SSE chunk:", line, parseError);
+            }
+          });
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          buffer += decoder.decode();
+          flushBufferedEvents(true);
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        flushBufferedEvents();
       }
 
       // Сохраняем message_id → потом FeedbackMessage сможет его достать
@@ -1896,6 +1886,7 @@ const ChatProvider = ({ children }) => {
     rate,
     text = "",
     dislikeReason = "",
+    sessionIdOverride = null,
   ) => {
     try {
       if (!messageId) {
@@ -1909,7 +1900,9 @@ const ChatProvider = ({ children }) => {
           (c.id === null && c === chats[0]),
       );
 
-      if (!currentChat?.id) {
+      const resolvedSessionId = sessionIdOverride || currentChat?.id || null;
+
+      if (!resolvedSessionId) {
         console.warn("sendFeedback: нет session_id для текущего чата");
         return;
       }
@@ -1919,7 +1912,7 @@ const ChatProvider = ({ children }) => {
       const feedbackType = rate === "good" ? "like" : "dislike";
 
       const payload = {
-        session_id: currentChat.id,
+        session_id: resolvedSessionId,
         user_id: userId,
         feedback_type: feedbackType,
         feedback_text: text || "",
