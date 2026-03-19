@@ -28,7 +28,6 @@ const ChatProvider = ({ children }) => {
   const streamingIndexRef = useRef(null);
   const streamAbortControllerRef = useRef(null);
   const activeStreamingRef = useRef(null);
-  const pendingStopRef = useRef(null);
   const [isInBinFlow, setIsInBinFlow] = useState(false);
   const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
@@ -1340,7 +1339,6 @@ const ChatProvider = ({ children }) => {
             excel_shown: false,
           },
         };
-        pendingStopRef.current = null;
 
         const response = await fetch(
           `${
@@ -1385,8 +1383,24 @@ const ChatProvider = ({ children }) => {
           if (!json) continue;
           const parsed = JSON.parse(json);
 
-          if (activeStreamingRef.current && parsed?.message_id) {
-            activeStreamingRef.current.messageId = parsed.message_id;
+          if (parsed.type === "metadata") {
+            const metadataSessionId =
+              parsed.session_id ||
+              activeStreamingRef.current?.sessionId ||
+              sessionId;
+
+            const metadataMessageId = parsed.message_id || null;
+
+            if (activeStreamingRef.current) {
+              activeStreamingRef.current.sessionId = metadataSessionId;
+              activeStreamingRef.current.messageId = metadataMessageId;
+            }
+
+            if (metadataSessionId && !currentChatId) {
+              setCurrentChatId(metadataSessionId);
+            }
+
+            continue;
           }
 
           if (parsed.type === "text") {
@@ -1401,12 +1415,6 @@ const ChatProvider = ({ children }) => {
 
             if (activeStreamingRef.current) {
               activeStreamingRef.current.accumulatedText = accumulatedText;
-            }
-
-            // Если пользователь уже нажал Stop, продолжаем читать поток,
-            // но больше не обновляем UI текстом
-            if (pendingStopRef.current?.requested) {
-              continue;
             }
 
             setChats((prev) =>
@@ -1473,8 +1481,6 @@ const ChatProvider = ({ children }) => {
               };
             }
 
-            const stopSnapshot = pendingStopRef.current;
-
             setChats((prev) =>
               prev.map((chat) => {
                 const idx = chat.messages.findIndex((m) => m.streaming);
@@ -1482,11 +1488,7 @@ const ChatProvider = ({ children }) => {
 
                 const updated = {
                   ...chat.messages[idx],
-                  text:
-                    stopSnapshot?.requested &&
-                    String(chat.id) === String(sidFromResponse)
-                      ? stopSnapshot.truncatedText
-                      : safeResponse,
+                  text: safeResponse,
                   messageId: msgId || chat.messages[idx]?.messageId || null,
                   streaming: false,
                   chart: parsed.chart || respObject.chart || null,
@@ -1522,33 +1524,10 @@ const ChatProvider = ({ children }) => {
                 return { ...chat, messages: copy };
               }),
             );
-
-            // Если пользователь нажал Stop раньше complete — отправляем stop сейчас,
-            // когда наконец получили message_id
-            if (stopSnapshot?.requested && sidFromResponse && msgId) {
-              const delayedStopPayload = {
-                session_id: sidFromResponse,
-                message_id: msgId,
-                truncate_at: stopSnapshot.truncateAt,
-                flags_seen: stopSnapshot.flagsSeen,
-              };
-
-              console.log("➡️ delayed stop payload:", delayedStopPayload);
-
-              try {
-                await apiNew.post("/api/chat/stop", delayedStopPayload, {
-                  headers: { "Content-Type": "application/json" },
-                  withCredentials: false,
-                });
-              } catch (stopError) {
-                console.error("Ошибка delayed stop:", stopError);
-              }
-            }
           } else if (parsed.type === "end") {
             setIsTyping(false);
             streamAbortControllerRef.current = null;
             activeStreamingRef.current = null;
-            pendingStopRef.current = null;
           }
         }
       }
@@ -1583,7 +1562,6 @@ const ChatProvider = ({ children }) => {
       setIsTyping(false);
       streamAbortControllerRef.current = null;
       activeStreamingRef.current = null;
-      pendingStopRef.current = null;
     }
   }
 
@@ -1634,17 +1612,7 @@ const ChatProvider = ({ children }) => {
           false,
       };
 
-      // Фиксируем отложенный stop: UI останавливаем сразу,
-      // а запрос на backend отправим на complete, когда придёт message_id
-      pendingStopRef.current = {
-        requested: true,
-        sessionId: currentChat.id,
-        truncatedText,
-        truncateAt: truncatedText.length,
-        flagsSeen,
-      };
-
-      // Локально сразу останавливаем сообщение для пользователя
+      // Сразу останавливаем UI
       setChats((prev) =>
         prev.map((chat) => {
           if (String(chat.id) !== String(currentChat.id)) {
@@ -1670,33 +1638,38 @@ const ChatProvider = ({ children }) => {
 
       setIsTyping(false);
 
-      // Если message_id уже есть, можно отправить stop сразу
-      if (sessionId && messageId) {
-        const stopPayload = {
-          session_id: sessionId,
-          message_id: messageId,
-          truncate_at: truncatedText.length,
-          flags_seen: flagsSeen,
-        };
-
-        console.log("➡️ immediate stop payload:", stopPayload);
-
-        await apiNew.post("/api/chat/stop", stopPayload, {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: false,
-        });
-
-        pendingStopRef.current = null;
-      } else {
-        console.log("⏳ stop отложен до complete, ждём message_id", {
+      if (!sessionId || !messageId) {
+        console.warn("stopStreaming: нет session_id или message_id", {
           sessionId,
           messageId,
         });
+        return;
+      }
+
+      const stopPayload = {
+        session_id: sessionId,
+        message_id: messageId,
+        truncate_at: truncatedText.length,
+        flags_seen: flagsSeen,
+      };
+
+      console.log("➡️ stopStreaming payload:", stopPayload);
+
+      await apiNew.post("/api/chat/stop", stopPayload, {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: false,
+      });
+
+      if (streamAbortControllerRef.current) {
+        streamAbortControllerRef.current.abort();
       }
     } catch (error) {
       if (error?.name !== "AbortError" && error?.code !== "ERR_CANCELED") {
         console.error("Ошибка остановки стриминга:", error);
       }
+    } finally {
+      streamAbortControllerRef.current = null;
+      activeStreamingRef.current = null;
     }
   };
 
