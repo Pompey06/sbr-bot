@@ -1235,6 +1235,14 @@ const ChatProvider = ({ children }) => {
       isFeedback: false,
       isAssistantResponse: true,
       streaming: true,
+      hasChart: false,
+      chart: null,
+      hasExcel: false,
+      excelFile: null,
+      showTable: false,
+      tableColumns: [],
+      rawData: [],
+      messageId: null,
     };
 
     setChats((prev) =>
@@ -1374,14 +1382,49 @@ const ChatProvider = ({ children }) => {
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
 
-        const parts = buffer.split("\n");
-        buffer = parts.pop();
+        // Новый парсер: режем по каждому "data:" даже если backend склеил события
+        const chunks = buffer.split(/(?=data:\s*)/);
 
-        for (const line of parts) {
+        // Последний кусок может быть незавершённым — оставляем его в buffer
+        buffer = chunks.pop() || "";
+
+        for (const rawChunk of chunks) {
+          const line = rawChunk.trim();
           if (!line.startsWith("data:")) continue;
+
           const json = line.slice(5).trim();
           if (!json) continue;
-          const parsed = JSON.parse(json);
+
+          let parsed;
+          try {
+            parsed = JSON.parse(json);
+          } catch (parseError) {
+            console.warn("Не удалось распарсить SSE chunk:", line, parseError);
+            continue;
+          }
+
+          const tail = buffer.trim();
+          if (tail.startsWith("data:")) {
+            const json = tail.slice(5).trim();
+
+            if (json) {
+              try {
+                const parsed = JSON.parse(json);
+
+                if (parsed.type === "end") {
+                  setIsTyping(false);
+                  streamAbortControllerRef.current = null;
+                  activeStreamingRef.current = null;
+                }
+              } catch (parseError) {
+                console.warn(
+                  "Не удалось распарсить tail SSE chunk:",
+                  tail,
+                  parseError,
+                );
+              }
+            }
+          }
 
           if (parsed.type === "metadata") {
             const metadataSessionId =
@@ -1394,10 +1437,6 @@ const ChatProvider = ({ children }) => {
             if (activeStreamingRef.current) {
               activeStreamingRef.current.sessionId = metadataSessionId;
               activeStreamingRef.current.messageId = metadataMessageId;
-            }
-
-            if (metadataSessionId && !currentChatId) {
-              setCurrentChatId(metadataSessionId);
             }
 
             continue;
@@ -1433,51 +1472,18 @@ const ChatProvider = ({ children }) => {
                 return { ...chat, messages: copy };
               }),
             );
-          } else if (parsed.type === "complete") {
-            // Бэкенд может присылать данные как в корне, так и во вложенном response
-            const respObject =
-              parsed &&
-              typeof parsed.response === "object" &&
-              parsed.response !== null
-                ? parsed.response
-                : {};
-
-            // Текст ответа:
-            // - либо parsed.response как строка
-            // - либо respObject.response
-            const textFromResponse =
-              typeof parsed.response === "string"
-                ? parsed.response
-                : typeof respObject.response === "string"
-                ? respObject.response
-                : "";
-
-            const safeResponse = textFromResponse || "";
-
-            // session_id: сначала берём из вложенного объекта, потом из корня
-            const sidFromResponse =
-              respObject.session_id ||
-              parsed.session_id ||
-              sessionId ||
-              currentChatId;
-
-            if (activeStreamingRef.current && sidFromResponse) {
-              activeStreamingRef.current.sessionId = sidFromResponse;
-            }
-
-            // message_id: сначала из вложенного объекта, потом из корня
-            const msgId = respObject.message_id || parsed.message_id || null;
+          } else if (parsed.type === "table") {
+            const tableData = Array.isArray(parsed.data) ? parsed.data : [];
+            const tableColumns = Array.isArray(parsed.columns)
+              ? parsed.columns
+              : tableData[0]
+              ? Object.keys(tableData[0])
+              : [];
 
             if (activeStreamingRef.current) {
-              activeStreamingRef.current.messageId = msgId;
               activeStreamingRef.current.flagsSeen = {
-                table_shown:
-                  parsed.show_table || respObject.show_table || false,
-                chart_shown: !!(parsed.chart || respObject.chart),
-                excel_shown:
-                  parsed.has_excel ||
-                  respObject.has_excel ||
-                  !!(parsed.excel_file || respObject.excel_file),
+                ...(activeStreamingRef.current.flagsSeen || {}),
+                table_shown: tableData.length > 0,
               };
             }
 
@@ -1488,21 +1494,143 @@ const ChatProvider = ({ children }) => {
 
                 const updated = {
                   ...chat.messages[idx],
+                  showTable: tableData.length > 0,
+                  tableColumns,
+                  rawData: tableData,
+                  messageId:
+                    chat.messages[idx]?.messageId ||
+                    activeStreamingRef.current?.messageId ||
+                    null,
+                };
+
+                const copy = [...chat.messages];
+                copy[idx] = updated;
+                return { ...chat, messages: copy };
+              }),
+            );
+          } else if (parsed.type === "chart") {
+            const chartData = parsed.chart || null;
+
+            if (activeStreamingRef.current) {
+              activeStreamingRef.current.flagsSeen = {
+                ...(activeStreamingRef.current.flagsSeen || {}),
+                chart_shown: !!chartData,
+              };
+            }
+
+            setChats((prev) =>
+              prev.map((chat) => {
+                const idx = chat.messages.findIndex((m) => m.streaming);
+                if (idx === -1) return chat;
+
+                const updated = {
+                  ...chat.messages[idx],
+                  hasChart: !!chartData,
+                  chart: chartData
+                    ? {
+                        ...chartData,
+                        success:
+                          typeof chartData.success === "boolean"
+                            ? chartData.success
+                            : true,
+                      }
+                    : null,
+                  messageId:
+                    chat.messages[idx]?.messageId ||
+                    activeStreamingRef.current?.messageId ||
+                    null,
+                };
+
+                const copy = [...chat.messages];
+                copy[idx] = updated;
+                return { ...chat, messages: copy };
+              }),
+            );
+          } else if (parsed.type === "excel") {
+            const excelFile = parsed.file || null;
+
+            if (activeStreamingRef.current) {
+              activeStreamingRef.current.flagsSeen = {
+                ...(activeStreamingRef.current.flagsSeen || {}),
+                excel_shown: !!excelFile,
+              };
+
+              if (
+                excelFile?.message_id &&
+                !activeStreamingRef.current.messageId
+              ) {
+                activeStreamingRef.current.messageId = excelFile.message_id;
+              }
+
+              if (
+                excelFile?.session_id &&
+                !activeStreamingRef.current.sessionId
+              ) {
+                activeStreamingRef.current.sessionId = excelFile.session_id;
+              }
+            }
+
+            setChats((prev) =>
+              prev.map((chat) => {
+                const idx = chat.messages.findIndex((m) => m.streaming);
+                if (idx === -1) return chat;
+
+                const updated = {
+                  ...chat.messages[idx],
+                  hasExcel: !!excelFile?.success,
+                  excelFile: excelFile?.success
+                    ? {
+                        file_id: excelFile.file_id,
+                        filename: excelFile.filename,
+                      }
+                    : null,
+                  messageId:
+                    excelFile?.message_id ||
+                    chat.messages[idx]?.messageId ||
+                    activeStreamingRef.current?.messageId ||
+                    null,
+                };
+
+                const copy = [...chat.messages];
+                copy[idx] = updated;
+                return { ...chat, messages: copy };
+              }),
+            );
+          } else if (parsed.type === "complete") {
+            const completeMeta = parsed?.metadata || {};
+
+            const sidFromResponse =
+              completeMeta.session_id ||
+              activeStreamingRef.current?.sessionId ||
+              sessionId ||
+              currentChatId;
+
+            const msgId =
+              completeMeta.message_id ||
+              activeStreamingRef.current?.messageId ||
+              null;
+
+            const safeResponse = accumulatedText || "";
+
+            if (activeStreamingRef.current) {
+              activeStreamingRef.current.sessionId = sidFromResponse;
+              activeStreamingRef.current.messageId = msgId;
+            }
+
+            setChats((prev) =>
+              prev.map((chat) => {
+                const idx = chat.messages.findIndex((m) => m.streaming);
+                if (idx === -1) return chat;
+
+                const currentMsg = chat.messages[idx];
+
+                const updated = {
+                  ...currentMsg,
                   text: safeResponse,
-                  messageId: msgId || chat.messages[idx]?.messageId || null,
+                  messageId: msgId || currentMsg?.messageId || null,
+                  hasChart: !!currentMsg?.chart,
                   streaming: false,
-                  chart: parsed.chart || respObject.chart || null,
-                  excelFile: parsed.excel_file || respObject.excel_file || null,
-                  hasExcel:
-                    parsed.has_excel ||
-                    respObject.has_excel ||
-                    !!respObject.excel_file ||
-                    false,
-                  showTable:
-                    parsed.show_table || respObject.show_table || false,
-                  tableColumns:
-                    parsed.table_columns || respObject.table_columns || [],
-                  rawData: parsed.raw_data || respObject.raw_data || [],
+                  isError: !!completeMeta.error,
                 };
 
                 const copy = [...chat.messages];
@@ -1524,6 +1652,7 @@ const ChatProvider = ({ children }) => {
                 return { ...chat, messages: copy };
               }),
             );
+            setIsTyping(false);
           } else if (parsed.type === "end") {
             setIsTyping(false);
             streamAbortControllerRef.current = null;
@@ -1894,13 +2023,15 @@ const ChatProvider = ({ children }) => {
         createMessage,
         stopStreaming,
         isStreamingCurrentChat:
+          isTyping ||
           chats
             .find(
               (c) =>
                 String(c.id) === String(currentChatId) ||
                 (c.id === null && c === chats[0]),
             )
-            ?.messages?.some((m) => m.streaming) || false,
+            ?.messages?.some((m) => m.streaming) ||
+          false,
         handleButtonClick,
         sendFeedback,
         getBotMessageIndex,
