@@ -46,7 +46,7 @@
 .ai__text--alt {
 }
 
-@media (max-width: 700px) {
+@media (max-width: 1100px) {
   .message-input-container {
     padding-right: 7px;
     gap: 10px;

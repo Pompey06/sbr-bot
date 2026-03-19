@@ -14,7 +14,7 @@ import SearchChatsModal from "../ChatWindow/Modal/SearchChatsModal";
 
 export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
   const { t, i18n } = useTranslation(undefined, { i18n: chatI18n });
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 700);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1100);
 
   const {
     chats,
@@ -28,7 +28,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 700);
+      setIsMobile(window.innerWidth < 1100);
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);

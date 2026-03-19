@@ -58,11 +58,11 @@ export default function ChatWindow({ isSidebarOpen, toggleSidebar }) {
   };
 
   const [isSmall, setIsSmall] = useState(
-    () => window.matchMedia("(max-width: 700px)").matches,
+    () => window.matchMedia("(max-width: 1100px)").matches,
   );
 
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 700px)");
+    const mq = window.matchMedia("(max-width: 1100px)");
     const handler = (e) => setIsSmall(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
