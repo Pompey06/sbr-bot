@@ -1,8 +1,8 @@
 {
   "name": {
-    "kk": "АЖ СБР деректер базасы бойынша жиі қойылатын сұрақтар",
-    "ru": "Часто задаваемые вопросы по базе данных ИС СБР",
-    "en": "Frequently Asked Questions about the IS SBR Database"
+    "kk": "Статистикалық бизнес-тіркелімінен жиі сұралатын мәліметтер",
+    "ru": "Часто запрашиваемые сведения из статистического бизнес-регистра",
+    "en": "Frequently requested information from the statistical business register"
   },
   "faqs": [
     {

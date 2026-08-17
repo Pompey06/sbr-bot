@@ -12,7 +12,7 @@
     "greetingAlt": "Hello! How can I assist you?",
     "sources": "Additionally, I attach instructions for the form:",
     "interestingSuggestion": "You may also be interested in...",
-    "annotation": "Within the framework of the functioning of this chatbot, information is available from the SBR, which, in accordance with Article 8 of the Law of the Republic of Kazakhstan “On State Statistics,” is considered non-confidential"
+    "annotation": "As part of the operation of this chatbot on the basis of the Statistical Business Register (SBR), information is available that, in accordance with Article 8 of the Law of the Republic of Kazakhstan “On State Statistics,” is not confidential"
   },
   "sidebar": {
     "close": "Close sidebar",
@@ -126,8 +126,8 @@
     "labelIndex": "Index"
   },
   "faq": {
-    "button": "Frequently Asked Questions about the IS 'SBR' database",
-    "title": "Frequently Asked Questions",
+    "button": "Frequently requested information from the statistical business register",
+    "title": "Frequently requested information from the statistical business register",
     "question1": "How to submit a statistical report?",
     "question2": "What are the deadlines for forms?",
     "question3": "Where to find filling instructions?"
