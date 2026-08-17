@@ -10,6 +10,7 @@
     "suggestionText": "Maybe you were looking for...",
     "greeting": "Hello! How can I help you?",
     "greetingAlt": "Hello! How can I assist you?",
+    "watermarkText": "Test mode",
     "sources": "Additionally, I attach instructions for the form:",
     "interestingSuggestion": "You may also be interested in...",
     "annotation": "As part of the operation of this chatbot on the basis of the Statistical Business Register (SBR), information is available that, in accordance with Article 8 of the Law of the Republic of Kazakhstan “On State Statistics,” is not confidential"

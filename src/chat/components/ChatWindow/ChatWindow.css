@@ -2,6 +2,26 @@
   width: 100%;
 }
 
+.chat-window--watermark {
+  position: relative;
+  overflow: hidden;
+}
+
+.chat-window__watermark {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-repeat: repeat;
+  background-size: 220px 140px;
+  opacity: 0.35;
+  z-index: 0;
+}
+
+.chat-window--watermark > *:not(.chat-window__watermark) {
+  position: relative;
+  z-index: 1;
+}
+
 .chat-window-start {
   align-items: center;
   justify-content: center;
