@@ -42,7 +42,7 @@ export default function Message({
   const [fileReadyMap, setFileReadyMap] = useState({});
   const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL_NEW || "http://172.16.17.4:8001",
-    withCredentials: false,
+    withCredentials: true,
   });
   const { downloadForm, chats, currentChatId } = useContext(ChatContext);
   const [fileBlobMap, setFileBlobMap] = useState({});

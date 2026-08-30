@@ -9,7 +9,10 @@ export const ChartRenderer = ({ chartId }) => {
     const fetchChart = async () => {
       try {
         const res = await fetch(
-          `http://172.16.17.4:8001/api/charts/${chartId}`,
+          `${
+            import.meta.env.VITE_API_URL_NEW || "http://172.16.17.4:8001"
+          }/api/charts/${chartId}`,
+          { credentials: "include" },
         );
         const data = await res.json();
         if (data.success && data.chart_html) {

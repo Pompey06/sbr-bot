@@ -2,6 +2,17 @@ import { Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import AppChat from "./chat/App";
 import { ChatProvider } from "./chat/context/ChatContext";
+import AccessTokenGate from "./auth/AccessTokenGate";
+
+function ProtectedChat() {
+  return (
+    <AccessTokenGate>
+      <ChatProvider>
+        <AppChat />
+      </ChatProvider>
+    </AccessTokenGate>
+  );
+}
 
 const AppAdmin = lazy(() => import("./admin/App"));
 const ContextProvider = lazy(() =>
@@ -13,19 +24,11 @@ function App() {
     <Routes>
       <Route
         path="/"
-        element={
-          <ChatProvider>
-            <AppChat />
-          </ChatProvider>
-        }
+        element={<ProtectedChat />}
       />
       <Route
         path="/chat"
-        element={
-          <ChatProvider>
-            <AppChat />
-          </ChatProvider>
-        }
+        element={<ProtectedChat />}
       />
       <Route
         path="/admin"

@@ -36,7 +36,7 @@ const ChatProvider = ({ children }) => {
   // Новый клиент для B-бэка
   const apiNew = axios.create({
     baseURL: import.meta.env.VITE_API_URL_NEW || "http://172.16.17.4:8001",
-    withCredentials: false,
+    withCredentials: true,
   });
   const USE_STREAMING_API = true;
   // helper: создание backend-сессии (возвращает session_id)
@@ -71,7 +71,6 @@ const ChatProvider = ({ children }) => {
     };
     const { data } = await apiNew.post("/api/sessions", payload, {
       headers: { "Content-Type": "application/json" },
-      withCredentials: false,
     });
     return data?.session_id;
   };
@@ -591,7 +590,6 @@ const ChatProvider = ({ children }) => {
     // 3) Бэкенд: DELETE /api/sessions/{session_id}
     try {
       await apiNew.delete(`/api/sessions/${chatId}`, {
-        withCredentials: false,
       });
     } catch (e) {
       const isCorsLikeNetworkError =
@@ -935,7 +933,6 @@ const ChatProvider = ({ children }) => {
 
       const { data } = await apiNew.post("/api/chat", body, {
         headers: { "Content-Type": "application/json" },
-        withCredentials: false,
       });
 
       console.log("💬 /api/chat static response:", data);
@@ -1355,6 +1352,7 @@ const ChatProvider = ({ children }) => {
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            credentials: "include",
             body: JSON.stringify({
               query: text,
               session_id: sessionId || null,
@@ -1776,7 +1774,6 @@ const ChatProvider = ({ children }) => {
 
       await apiNew.post("/api/chat/stop", stopPayload, {
         headers: { "Content-Type": "application/json" },
-        withCredentials: false,
       });
 
       if (streamAbortControllerRef.current) {
@@ -1935,7 +1932,7 @@ const ChatProvider = ({ children }) => {
         payload,
         {
           headers: { "Content-Type": "application/json" },
-          withCredentials: false,
+          withCredentials: true,
         },
       );
 
