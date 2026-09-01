@@ -143,7 +143,11 @@ const ChatProvider = ({ children }) => {
   const [currentChatId, setCurrentChatId] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState(null);
-  const [locale, setLocale] = useState("ru");
+  const [locale, setLocale] = useState(() => {
+    if (i18n.language === "\u049b\u0430\u0437") return "kz";
+    if (i18n.language === "eng") return "en";
+    return "ru";
+  });
   const [scrollToMessageId, setScrollToMessageId] = useState(null);
 
   useEffect(() => {

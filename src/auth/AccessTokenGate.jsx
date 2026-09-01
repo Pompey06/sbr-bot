@@ -41,8 +41,14 @@ const getTokenFromUrl = () =>
   new URLSearchParams(window.location.search).get("token");
 
 const getLanguage = () => {
-  const language = new URLSearchParams(window.location.search).get("lang");
-  return ["ru", "kz", "en"].includes(language) ? language : "kz";
+  const language = new URLSearchParams(window.location.search)
+    .get("lang")
+    ?.trim()
+    .toLowerCase();
+
+  if (language === "ru" || language === "en") return language;
+  if (language === "kz" || language === "kk") return "kz";
+  return "kz";
 };
 
 const copy = {
